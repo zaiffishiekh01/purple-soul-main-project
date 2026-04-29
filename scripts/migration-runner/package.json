@@ -1,0 +1,14 @@
+{
+  "name": "supabase-migration-runner",
+  "version": "1.0.0",
+  "description": "Run Supabase migrations directly without CLI",
+  "main": "run-migrations.js",
+  "scripts": {
+    "run": "node run-migrations.js",
+    "status": "node check-status.js"
+  },
+  "dependencies": {
+    "pg": "^8.11.3",
+    "dotenv": "^16.3.1"
+  }
+}

@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supabase Migration Runner</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; padding: 20px; }
+    .container { max-width: 1000px; margin: 0 auto; }
+    h1 { color: #1a1a1a; margin-bottom: 10px; }
+    .subtitle { color: #666; margin-bottom: 30px; }
+    .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-weight: 500; margin-bottom: 6px; color: #333; }
+    input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-family: monospace; font-size: 14px; }
+    button { background: #3ecf8e; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; }
+    button:hover { background: #2eb87a; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button.secondary { background: #666; }
+    button.danger { background: #ef4444; }
+    .migration-item { padding: 16px; border: 1px solid #e5e5e5; border-radius: 8px; margin-bottom: 12px; }
+    .migration-item.applied { background: #f0fdf4; border-color: #86efac; }
+    .migration-item.pending { background: #fefce8; border-color: #fde047; }
+    .migration-item.error { background: #fef2f2; border-color: #fca5a5; }
+    .status-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .status-badge.applied { background: #dcfce7; color: #166534; }
+    .status-badge.pending { background: #fef9c3; color: #854d0e; }
+    .status-badge.error { background: #fee2e2; color: #991b1b; }
+    pre { background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 8px; overflow-x: auto; max-height: 400px; overflow-y: auto; font-size: 12px; }
+    .log { margin-top: 16px; }
+    .log-entry { padding: 8px; margin: 4px 0; border-radius: 6px; font-family: monospace; font-size: 13px; }
+    .log-entry.success { background: #dcfce7; color: #166534; }
+    .log-entry.error { background: #fee2e2; color: #991b1b; }
+    .log-entry.info { background: #dbeafe; color: #1e40af; }
+    .checkbox-group { display: flex; align-items: center; gap: 8px; }
+    .checkbox-group input[type="checkbox"] { width: auto; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 Supabase Migration Runner</h1>
+    <p class="subtitle">Run SQL migrations directly against your Supabase database</p>
+
+    <!-- Configuration -->
+    <div class="card">
+      <h2 style="margin-bottom: 16px;">⚙️ Database Configuration</h2>
+      <div class="form-group">
+        <label>Project URL</label>
+        <input type="text" id="supabaseUrl" value="https://naesxujdffcmatntrlfr.supabase.co" placeholder="https://xxxxx.supabase.co" />
+      </div>
+      <div class="form-group">
+        <label>Service Role Key</label>
+        <input type="password" id="serviceRoleKey" placeholder="eyJhbGci..." />
+        <small style="color: #666;">Find this in Supabase Dashboard → Settings → API → service_role key</small>
+      </div>
+      <div class="checkbox-group">
+        <input type="checkbox" id="saveLocally" />
+        <label for="saveLocally" style="margin: 0;">Save credentials in browser (for this session only)</label>
+      </div>
+    </div>
+
+    <!-- Migration Files -->
+    <div class="card">
+      <h2 style="margin-bottom: 16px;">📄 Available Migrations</h2>
+      <div id="migrationList">
+        <p style="color: #666;">Loading migrations...</p>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="card">
+      <h2 style="margin-bottom: 16px;">🎯 Actions</h2>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <button onclick="runAllMigrations()">Run All Pending</button>
+        <button class="secondary" onclick="refreshStatus()">Refresh Status</button>
+        <button class="danger" onclick="clearMigrationHistory()">Clear Migration History</button>
+      </div>
+    </div>
+
+    <!-- Logs -->
+    <div class="card">
+      <h2 style="margin-bottom: 16px;">📋 Execution Log</h2>
+      <button class="secondary" onclick="clearLogs()" style="margin-bottom: 12px; font-size: 12px; padding: 6px 12px;">Clear Logs</button>
+      <div id="logs"></div>
+    </div>
+  </div>
+
+  <script>
+    // Migration definitions
+    const MIGRATIONS = [
+      {
+        id: '20260411_create_admin_user_bypass',
+        name: 'Create admin user bypass function',
+        file: 'create_admin_user_bypass.sql',
+        description: 'Creates SECURITY DEFINER function to bypass RLS for admin creation'
+      },
+      {
+        id: '20260411_create_vendor_delete_bypass',
+        name: 'Create vendor delete bypass function',
+        file: 'delete_vendor_bypass.sql',
+        description: 'Creates SECURITY DEFINER function to delete vendors bypassing RLS'
+      },
+      {
+        id: '20260411_fix_vendor_rls_policies',
+        name: 'Fix vendor RLS policies',
+        file: 'fix_vendor_rls_policies.sql',
+        description: 'Creates comprehensive RLS policies for vendors table'
+      },
+      {
+        id: '20260411_create_vendors_excluding_admins_view',
+        name: 'Create vendors excluding admins view',
+        file: 'vendors_excluding_admins_view.sql',
+        description: 'Creates view to show only vendors (not admins)'
+      }
+    ];
+
+    let appliedMigrations = new Set();
+
+    // Load saved credentials
+    function loadCredentials() {
+      const savedUrl = sessionStorage.getItem('supabase_url');
+      const savedKey = sessionStorage.getItem('supabase_key');
+      if (savedUrl) document.getElementById('supabaseUrl').value = savedUrl;
+      if (savedKey) document.getElementById('serviceRoleKey').value = savedKey;
+    }
+
+    function saveCredentials() {
+      if (document.getElementById('saveLocally').checked) {
+        sessionStorage.setItem('supabase_url', document.getElementById('supabaseUrl').value);
+        sessionStorage.setItem('supabase_key', document.getElementById('serviceRoleKey').value);
+      }
+    }
+
+    // Execute SQL via Supabase Management API
+    async function executeSQL(sql) {
+      const url = document.getElementById('supabaseUrl').value.trim();
+      const key = document.getElementById('serviceRoleKey').value.trim();
+
+      if (!url || !key) {
+        throw new Error('Please provide both Project URL and Service Role Key');
+      }
+
+      saveCredentials();
+
+      // Extract project ref from URL
+      const projectRef = url.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1];
+      if (!projectRef) {
+        throw new Error('Invalid project URL. Expected: https://xxxxx.supabase.co');
+      }
+
+      // Use the PostgreSQL interface via REST API
+      // Since we can't use the Management API without auth token, we'll use edge function approach
+      // For now, let's use a direct fetch to Supabase's REST API to run SQL
+      
+      const response = await fetch(`${url}/rest/v1/rpc/execute_sql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': key,
+          'Authorization': `Bearer ${key}`,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ sql_query: sql })
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`HTTP ${response.status}: ${error}`);
+      }
+
+      return { success: true };
+    }
+
+    // Check if migration has been applied
+    async function checkMigrationApplied(migrationId) {
+      // For now, we'll track this locally
+      // In a real implementation, you'd check a migrations table
+      return appliedMigrations.has(migrationId);
+    }
+
+    // Load migration status
+    async function loadMigrationStatus() {
+      const migrationList = document.getElementById('migrationList');
+      migrationList.innerHTML = '<p style="color: #666;">Checking migration status...</p>';
+
+      // Create migrations table if it doesn't exist
+      await createMigrationsTable();
+
+      // Check which migrations have been applied
+      const status = await getMigrationStatus();
+      appliedMigrations = new Set(status);
+
+      // Render migration list
+      migrationList.innerHTML = MIGRATIONS.map(m => {
+        const isApplied = appliedMigrations.has(m.id);
+        return `
+          <div class="migration-item ${isApplied ? 'applied' : 'pending'}">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <strong>${m.name}</strong>
+              <span class="status-badge ${isApplied ? 'applied' : 'pending'}">
+                ${isApplied ? '✓ Applied' : '○ Pending'}
+              </span>
+            </div>
+            <p style="color: #666; font-size: 13px; margin-bottom: 8px;">${m.description}</p>
+            <code style="font-size: 12px; background: #f5f5f5; padding: 4px 8px; border-radius: 4px;">${m.file}</code>
+            ${!isApplied ? `<button onclick="runMigration('${m.id}')" style="margin-left: 12px; font-size: 12px; padding: 6px 12px;">Run Now</button>` : ''}
+          </div>
+        `;
+      }).join('');
+
+      log(`Loaded ${MIGRATIONS.length} migrations, ${appliedMigrations.size} applied`, 'info');
+    }
+
+    // Create migrations tracking table
+    async function createMigrationsTable() {
+      const sql = `
+        CREATE TABLE IF NOT EXISTS _migrations (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          migration_id TEXT NOT NULL UNIQUE,
+          name TEXT NOT NULL,
+          applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        );
+      `;
+
+      try {
+        await executeSQL(sql);
+        log('✓ Migrations tracking table ready', 'success');
+      } catch (error) {
+        // Table might already exist, that's ok
+        log('⚠ Migrations table check: ' + error.message, 'info');
+      }
+    }
+
+    // Get applied migrations
+    async function getMigrationStatus() {
+      try {
+        const url = document.getElementById('supabaseUrl').value.trim();
+        const key = document.getElementById('serviceRoleKey').value.trim();
+
+        const response = await fetch(`${url}/rest/v1/_migrations?select=migration_id`, {
+          headers: {
+            'apikey': key,
+            'Authorization': `Bearer ${key}`
+          }
+        });
+
+        if (!response.ok) return [];
+
+        const data = await response.json();
+        return data.map(m => m.migration_id);
+      } catch (error) {
+        log('Error fetching migration status: ' + error.message, 'error');
+        return [];
+      }
+    }
+
+    // Run a single migration
+    async function runMigration(migrationId) {
+      const migration = MIGRATIONS.find(m => m.id === migrationId);
+      if (!migration) {
+        log(`❌ Migration ${migrationId} not found`, 'error');
+        return;
+      }
+
+      log(`🚀 Running migration: ${migration.name}`, 'info');
+
+      try {
+        // Read SQL file content (in real implementation, you'd fetch the file)
+        // For now, we'll load from the scripts directory
+        const response = await fetch(`../../dashboard/scripts/${migration.file}`);
+        if (!response.ok) {
+          throw new Error(`SQL file not found: ${migration.file}`);
+        }
+        const sql = await response.text();
+
+        await executeSQL(sql);
+
+        // Record migration as applied
+        await executeSQL(`
+          INSERT INTO _migrations (migration_id, name)
+          VALUES ('${migrationId}', '${migration.name}')
+          ON CONFLICT (migration_id) DO NOTHING;
+        `);
+
+        appliedMigrations.add(migrationId);
+        log(`✅ Migration applied: ${migration.name}`, 'success');
+
+        // Refresh the list
+        await loadMigrationStatus();
+      } catch (error) {
+        log(`❌ Failed to apply ${migration.name}: ${error.message}`, 'error');
+      }
+    }
+
+    // Run all pending migrations
+    async function runAllMigrations() {
+      const pending = MIGRATIONS.filter(m => !appliedMigrations.has(m.id));
+      if (pending.length === 0) {
+        log('✓ All migrations are already applied', 'info');
+        return;
+      }
+
+      log(`🚀 Running ${pending.length} pending migrations...`, 'info');
+
+      for (const migration of pending) {
+        await runMigration(migration.id);
+      }
+
+      log('✅ All migrations completed!', 'success');
+    }
+
+    // Logging
+    function log(message, type = 'info') {
+      const logs = document.getElementById('logs');
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logs.prepend(entry);
+    }
+
+    function clearLogs() {
+      document.getElementById('logs').innerHTML = '';
+    }
+
+    // Initialize
+    async function refreshStatus() {
+      log('🔄 Refreshing migration status...', 'info');
+      await loadMigrationStatus();
+    }
+
+    async function clearMigrationHistory() {
+      if (!confirm('Clear migration history? This will NOT undo the migrations, just clear the tracking.')) {
+        return;
+      }
+
+      try {
+        await executeSQL('TRUNCATE TABLE _migrations;');
+        appliedMigrations.clear();
+        log('✓ Migration history cleared', 'success');
+        await loadMigrationStatus();
+      } catch (error) {
+        log('Error clearing migration history: ' + error.message, 'error');
+      }
+    }
+
+    // Load on startup
+    loadCredentials();
+    loadMigrationStatus();
+  </script>
+</body>
+</html>

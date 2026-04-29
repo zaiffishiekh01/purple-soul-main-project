@@ -1,0 +1,287 @@
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light Mode - Background Layers */
+    --color-bg-base: 255 255 255;
+    --color-bg-page: 249 250 251;
+    --color-bg-surface: 255 255 255;
+    --color-bg-surface-elevated: 255 255 255;
+    --color-bg-surface-deep: 243 244 246;
+    --color-bg-overlay: 0 0 0;
+    --color-bg-overlay-opacity: 0.5;
+
+    /* Light Mode - Purple Soul Gradients */
+    --color-gradient-start: 140 48 223;
+    --color-gradient-end: 112 35 176;
+    --color-gradient-light-start: 250 245 255;
+    --color-gradient-light-end: 243 232 255;
+
+    /* Light Mode - Text */
+    --color-text-primary: 17 24 39;
+    --color-text-secondary: 75 85 99;
+    --color-text-muted: 156 163 175;
+    --color-text-disabled: 209 213 219;
+    --color-text-inverse: 255 255 255;
+    --color-text-accent: 140 48 223;
+
+    /* Light Mode - Borders & Dividers */
+    --color-border: 229 231 235;
+    --color-border-focus: 140 48 223;
+    --color-border-hover: 209 213 219;
+    --color-divider: 243 244 246;
+
+    /* Light Mode - Icons */
+    --color-icon-default: 107 114 128;
+    --color-icon-muted: 156 163 175;
+    --color-icon-active: 140 48 223;
+    --color-icon-inverse: 255 255 255;
+
+    /* Light Mode - Interactive States */
+    --color-hover-bg: 249 250 251;
+    --color-active-bg: 243 244 246;
+    --color-selected-bg: 250 245 255;
+
+    /* Light Mode - Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md:
+      0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg:
+      0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl:
+      0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+    --primary: oklch(0.205 0 0);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.97 0 0);
+    --secondary-foreground: oklch(0.205 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.556 0 0);
+    --accent: oklch(0.97 0 0);
+    --accent-foreground: oklch(0.205 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: oklch(0.922 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.708 0 0);
+    --chart-1: oklch(0.87 0 0);
+    --chart-2: oklch(0.556 0 0);
+    --chart-3: oklch(0.439 0 0);
+    --chart-4: oklch(0.371 0 0);
+    --chart-5: oklch(0.269 0 0);
+    --radius: 0.625rem;
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+  }
+
+  [data-theme="dark"] {
+    /* Dark Mode - Background Layers with deep plum undertones */
+    --color-bg-base: 17 15 23;
+    --color-bg-page: 24 20 35;
+    --color-bg-surface: 31 27 43;
+    --color-bg-surface-elevated: 41 35 56;
+    --color-bg-surface-deep: 17 15 23;
+    --color-bg-overlay: 0 0 0;
+    --color-bg-overlay-opacity: 0.7;
+
+    /* Dark Mode - Purple Soul Gradients */
+    --color-gradient-start: 140 48 223;
+    --color-gradient-end: 112 35 176;
+    --color-gradient-light-start: 51 43 71;
+    --color-gradient-light-end: 41 35 56;
+
+    /* Dark Mode - Text with warm undertones */
+    --color-text-primary: 241 237 246;
+    --color-text-secondary: 203 195 214;
+    --color-text-muted: 156 148 171;
+    --color-text-disabled: 107 99 122;
+    --color-text-inverse: 17 15 23;
+    --color-text-accent: 166 77 255;
+
+    /* Dark Mode - Borders & Dividers - softer contrast */
+    --color-border: 51 43 71;
+    --color-border-focus: 166 77 255;
+    --color-border-hover: 66 56 92;
+    --color-divider: 41 35 56;
+
+    /* Dark Mode - Icons */
+    --color-icon-default: 156 148 171;
+    --color-icon-muted: 107 99 122;
+    --color-icon-active: 166 77 255;
+    --color-icon-inverse: 17 15 23;
+
+    /* Dark Mode - Interactive States */
+    --color-hover-bg: 41 35 56;
+    --color-active-bg: 51 43 71;
+    --color-selected-bg: 51 43 71;
+
+    /* Dark Mode - Shadows - softer glow */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+    --shadow-md:
+      0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(166 77 255 / 0.05);
+    --shadow-lg:
+      0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(166 77 255 / 0.1);
+    --shadow-xl:
+      0 20px 25px -5px rgb(0 0 0 / 0.3), 0 8px 10px -6px rgb(166 77 255 / 0.15);
+    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.5);
+  }
+
+  body {
+    background-color: rgb(var(--color-bg-page));
+    color: rgb(var(--color-text-primary));
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease;
+  }
+  .theme {
+    --font-heading: var(--font-sans);
+    --font-sans: "Geist Variable", sans-serif;
+  }
+  .dark {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+    --chart-1: oklch(0.87 0 0);
+    --chart-2: oklch(0.556 0 0);
+    --chart-3: oklch(0.439 0 0);
+    --chart-4: oklch(0.371 0 0);
+    --chart-5: oklch(0.269 0 0);
+    --sidebar: oklch(0.205 0 0);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.556 0 0);
+  }
+
+  html {
+    @apply font-sans;
+  }
+}
+
+@layer utilities {
+  .gradient-purple-soul {
+    background: linear-gradient(
+      135deg,
+      rgb(var(--color-gradient-start)) 0%,
+      rgb(var(--color-gradient-end)) 100%
+    );
+  }
+
+  .gradient-purple-vibrant {
+    background: linear-gradient(135deg, #a64dff 0%, #6a0dad 100%);
+  }
+
+  .gradient-purple-deep {
+    background: linear-gradient(135deg, #7b28c5 0%, #5d2e8c 100%);
+  }
+
+  .text-gradient-purple {
+    background: linear-gradient(
+      135deg,
+      rgb(var(--color-gradient-start)) 0%,
+      rgb(var(--color-gradient-end)) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .bg-base {
+    background-color: rgb(var(--color-bg-base));
+  }
+  .bg-page {
+    background-color: rgb(var(--color-bg-page));
+  }
+  .bg-surface {
+    background-color: rgb(var(--color-bg-surface));
+  }
+  .bg-surface-elevated {
+    background-color: rgb(var(--color-bg-surface-elevated));
+  }
+  .bg-surface-deep {
+    background-color: rgb(var(--color-bg-surface-deep));
+  }
+
+  .text-primary {
+    color: rgb(var(--color-text-primary));
+  }
+  .text-secondary {
+    color: rgb(var(--color-text-secondary));
+  }
+  .text-muted {
+    color: rgb(var(--color-text-muted));
+  }
+  .text-accent {
+    color: rgb(var(--color-text-accent));
+  }
+
+  .border-default {
+    border-color: rgb(var(--color-border));
+  }
+  .border-hover {
+    border-color: rgb(var(--color-border-hover));
+  }
+  .divide-default {
+    border-color: rgb(var(--color-border));
+  }
+
+  .icon-default {
+    color: rgb(var(--color-icon-default));
+  }
+  .icon-muted {
+    color: rgb(var(--color-icon-muted));
+  }
+  .icon-active {
+    color: rgb(var(--color-icon-active));
+  }
+
+  .shadow-theme-sm {
+    box-shadow: var(--shadow-sm);
+  }
+  .shadow-theme-md {
+    box-shadow: var(--shadow-md);
+  }
+  .shadow-theme-lg {
+    box-shadow: var(--shadow-lg);
+  }
+  .shadow-theme-xl {
+    box-shadow: var(--shadow-xl);
+  }
+  .shadow-theme-2xl {
+    box-shadow: var(--shadow-2xl);
+  }
+}
