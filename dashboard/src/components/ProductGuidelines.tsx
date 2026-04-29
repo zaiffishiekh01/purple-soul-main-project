@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BookOpen, Download, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { NEXT_PUBLIC_SUPABASE_URL } from '../lib/env';
 
 interface Guideline {
   id: string;
@@ -60,7 +61,7 @@ export function ProductGuidelines() {
         return;
       }
 
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-guidelines-pdf`;
+      const apiUrl = `${NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-guidelines-pdf`;
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {

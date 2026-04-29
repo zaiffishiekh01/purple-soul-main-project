@@ -1,5 +1,7 @@
+'use client';
+
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { OrderManagement } from './OrderManagement';
 import { OrderDetailsModal } from './modals/OrderDetailsModal';
 import { useOrders } from '../hooks/useOrders';
@@ -7,7 +9,7 @@ import { useVendorContext } from '../contexts/VendorContext';
 import { Order } from '../types';
 
 export function OrderManagementContainer() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { vendor } = useVendorContext();
   const { orders, loading, updateOrder } = useOrders(vendor?.id);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -50,7 +52,7 @@ export function OrderManagementContainer() {
       }));
 
       // Navigate to labels page
-      navigate('/vendor/labels');
+      router.push('/vendor/labels');
       setSelectedOrder(null);
     }
   };

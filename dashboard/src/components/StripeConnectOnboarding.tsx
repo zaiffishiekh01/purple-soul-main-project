@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, AlertCircle, ExternalLink, DollarSign, Zap, Shield } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { NEXT_PUBLIC_SUPABASE_URL } from '../lib/env';
 
 interface StripeConnectOnboardingProps {
   vendorId: string;
@@ -44,7 +45,7 @@ export function StripeConnectOnboarding({ vendorId, businessName, email }: Strip
       if (!session) throw new Error('Not authenticated');
 
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-stripe-connect-account`,
+        `${NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create-stripe-connect-account`,
         {
           method: 'POST',
           headers: {

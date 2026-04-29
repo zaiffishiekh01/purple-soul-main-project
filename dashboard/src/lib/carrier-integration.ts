@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { NEXT_PUBLIC_SUPABASE_URL } from './env';
 
 export interface CarrierIntegration {
   id: string;
@@ -81,7 +82,7 @@ export async function getShippingRates(
       throw new Error('Not authenticated');
     }
 
-    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-shipping-rates`;
+    const apiUrl = `${NEXT_PUBLIC_SUPABASE_URL}/functions/v1/get-shipping-rates`;
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -157,7 +158,7 @@ export async function createShippingLabel(
       throw new Error('Not authenticated');
     }
 
-    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-shipping-label`;
+    const apiUrl = `${NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create-shipping-label`;
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {

@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { NEXT_PUBLIC_SUPABASE_URL } from './env';
 
 interface SendEmailParams {
   to: string;
@@ -16,7 +17,7 @@ export async function sendEmail({ to, subject, html, from }: SendEmailParams): P
       return false;
     }
 
-    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`;
+    const apiUrl = `${NEXT_PUBLIC_SUPABASE_URL}/functions/v1/send-email`;
 
     const response = await fetch(apiUrl, {
       method: 'POST',

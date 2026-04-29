@@ -115,7 +115,7 @@ export function AdminAnalytics() {
           <h2 className="text-xl font-bold text-gray-900 mb-4">Top Performing Vendors</h2>
           <div className="space-y-4">
             {topVendors.map((vendor, index) => (
-              <div key={vendor.id || vendor.name} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div key={vendor.name} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white font-bold">
                     {index + 1}

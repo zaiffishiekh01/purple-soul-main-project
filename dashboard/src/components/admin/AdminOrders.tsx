@@ -1,12 +1,14 @@
+'use client';
+
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { ShoppingCart, Search, Filter, Eye, Package, Truck, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { useOrders } from '../../hooks/useOrders';
 import { OrderDetailsModal } from '../modals/OrderDetailsModal';
 import { Order } from '../../types';
 
 export function AdminOrders() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { orders, loading, updateOrder } = useOrders();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -27,7 +29,7 @@ export function AdminOrders() {
         taxAmount: selectedOrder.tax_amount,
         shippingCost: selectedOrder.shipping_cost,
       }));
-      navigate('/admin/labels');
+      router.push('/admin/labels');
       setSelectedOrder(null);
     }
   };

@@ -1,10 +1,12 @@
+'use client';
+
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { KeyRound, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export function ResetPassword() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -49,14 +51,14 @@ export function ResetPassword() {
 
         setTimeout(() => {
           if (adminData) {
-            navigate('/admin/dashboard');
+            router.push('/admin/dashboard');
           } else {
-            navigate('/vendor/dashboard');
+            router.push('/vendor/dashboard');
           }
         }, 2000);
       } else {
         setTimeout(() => {
-          navigate('/');
+          router.push('/');
         }, 2000);
       }
     } catch (err) {

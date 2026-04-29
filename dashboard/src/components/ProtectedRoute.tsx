@@ -1,5 +1,7 @@
-import { ReactNode, useRef } from 'react';
-import { Navigate } from 'react-router-dom';
+'use client';
+
+import { ReactNode, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
 
 interface ProtectedRouteProps {
@@ -9,11 +11,19 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requireAdmin, requireVendor }: ProtectedRouteProps) {
+  const router = useRouter();
   const renderCountRef = useRef(0);
   renderCountRef.current += 1;
   console.log('🟣 ProtectedRoute render:', renderCountRef.current, { requireAdmin, requireVendor });
 
   const { user, loading, isAdmin } = useAuth();
+  const shouldRedirectToRoot = !loading && !user;
+
+  useEffect(() => {
+    if (shouldRedirectToRoot) {
+      router.replace('/');
+    }
+  }, [router, shouldRedirectToRoot]);
 
   if (loading) {
     return (
@@ -26,9 +36,9 @@ export function ProtectedRoute({ children, requireAdmin, requireVendor }: Protec
     );
   }
 
-  if (!user) {
+  if (shouldRedirectToRoot) {
     console.log('🟣 ProtectedRoute: No user, redirecting to /');
-    return <Navigate to="/" replace />;
+    return null;
   }
 
   if (requireAdmin && !isAdmin) {

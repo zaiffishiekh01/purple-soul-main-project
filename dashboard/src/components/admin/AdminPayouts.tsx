@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { DollarSign, CheckCircle, XCircle, Clock, Settings, MessageSquare, Zap, RotateCcw, FileText, Download, Eye } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { NEXT_PUBLIC_SUPABASE_URL } from '../../lib/env';
 
 interface PayoutRequest {
   id: string;
@@ -181,7 +182,7 @@ export function AdminPayouts() {
         if (!session) throw new Error('Not authenticated');
 
         const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-automatic-payout`,
+          `${NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create-automatic-payout`,
           {
             method: 'POST',
             headers: {

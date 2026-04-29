@@ -1,12 +1,14 @@
+'use client';
+
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { Support } from './Support';
 import { useSupportTickets, SupportTicket } from '../hooks/useSupportTickets';
 import { CreateTicketModal } from './modals/CreateTicketModal';
 import { TicketDetailsModal } from './modals/TicketDetailsModal';
 
 export function SupportContainer() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { tickets, loading, createTicket, addMessage, fetchTicketMessages } =
     useSupportTickets();
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -50,7 +52,7 @@ export function SupportContainer() {
         onViewDetails={handleViewDetails}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        onNavigateToFeeSupport={() => navigate('/vendor/fee-support')}
+        onNavigateToFeeSupport={() => router.push('/vendor/fee-support')}
       />
 
       {showCreateModal && (

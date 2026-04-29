@@ -1,5 +1,7 @@
-import { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
+'use client';
+
+import { ReactNode, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
 
 interface PublicRouteProps {
@@ -7,7 +9,15 @@ interface PublicRouteProps {
 }
 
 export function PublicRoute({ children }: PublicRouteProps) {
+  const router = useRouter();
   const { user, loading, isAdmin } = useAuth();
+  const shouldRedirect = !!user;
+
+  useEffect(() => {
+    if (shouldRedirect) {
+      router.replace(isAdmin ? '/admin/dashboard' : '/vendor/dashboard');
+    }
+  }, [isAdmin, router, shouldRedirect]);
 
   if (loading) {
     return (
@@ -20,12 +30,8 @@ export function PublicRoute({ children }: PublicRouteProps) {
     );
   }
 
-  if (user) {
-    if (isAdmin) {
-      return <Navigate to="/admin/dashboard" replace />;
-    } else {
-      return <Navigate to="/vendor/dashboard" replace />;
-    }
+  if (shouldRedirect) {
+    return null;
   }
 
   return <>{children}</>;

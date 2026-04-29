@@ -1,8 +1,10 @@
-import { useNavigate } from 'react-router-dom';
+'use client';
+
+import { useRouter } from 'next/navigation';
 import { Building2, Store } from 'lucide-react';
 
 export function RoleSelection() {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 flex items-center justify-center p-4">
@@ -21,7 +23,7 @@ export function RoleSelection() {
 
         <div className="grid md:grid-cols-2 gap-8">
           <button
-            onClick={() => navigate('/login/vendor')}
+            onClick={() => router.push('/login/vendor')}
             className="group relative bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 border-transparent hover:border-blue-500"
           >
             <div className="flex flex-col items-center text-center space-y-6">
@@ -50,7 +52,7 @@ export function RoleSelection() {
           </button>
 
           <button
-            onClick={() => navigate('/login/admin')}
+            onClick={() => router.push('/login/admin')}
             className="group relative bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 border-transparent hover:border-emerald-500"
           >
             <div className="flex flex-col items-center text-center space-y-6">

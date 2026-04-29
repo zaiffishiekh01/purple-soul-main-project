@@ -1,5 +1,7 @@
+'use client';
+
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams, useRouter } from 'next/navigation';
 import { LogIn, UserPlus, ArrowLeft, Eye, EyeOff, KeyRound, Shield, Clock, CheckCircle, Send } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -126,8 +128,9 @@ function AdminRequestAccess({ onBack }: { onBack: () => void }) {
 }
 
 export function Auth() {
-  const { role } = useParams<{ role: 'vendor' | 'admin' }>();
-  const navigate = useNavigate();
+  const params = useParams<{ role: string }>();
+  const role = params?.role as 'vendor' | 'admin' | undefined;
+  const router = useRouter();
   const [isSignUp, setIsSignUp] = useState(false);
   const [showAdminRequest, setShowAdminRequest] = useState(false);
   const [email, setEmail] = useState('');
@@ -156,9 +159,9 @@ export function Auth() {
       } else {
         const { isAdmin: userIsAdmin } = await signIn(email, password);
         if (userIsAdmin) {
-          navigate('/admin/dashboard', { replace: true });
+          router.replace('/admin/dashboard');
         } else {
-          navigate('/vendor/dashboard', { replace: true });
+          router.replace('/vendor/dashboard');
         }
       }
     } catch (err) {
@@ -187,7 +190,7 @@ export function Auth() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 flex items-center justify-center p-6">
       <div className="w-full max-w-md">
         <button
-          onClick={() => navigate('/')}
+          onClick={() => router.push('/')}
           className="mb-4 flex items-center gap-2 text-slate-600 hover:text-slate-800 transition-colors text-sm"
         >
           <ArrowLeft className="w-4 h-4" />

@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { NEXT_PUBLIC_SUPABASE_URL } from './env';
 
 export interface PaymentIntentRequest {
   amount: number;
@@ -18,7 +19,7 @@ export async function createPaymentIntent(
       return null;
     }
 
-    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`;
+    const apiUrl = `${NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create-payment-intent`;
 
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -58,7 +59,7 @@ export async function calculateShippingRates(params: {
       return null;
     }
 
-    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/calculate-shipping-rates`;
+    const apiUrl = `${NEXT_PUBLIC_SUPABASE_URL}/functions/v1/calculate-shipping-rates`;
 
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -96,7 +97,7 @@ export async function generateShippingLabel(params: {
       return null;
     }
 
-    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-shipping-label`;
+    const apiUrl = `${NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-shipping-label`;
 
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -129,7 +130,7 @@ export async function generateInvoicePDF(orderId: string): Promise<string | null
       return null;
     }
 
-    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-invoice-pdf`;
+    const apiUrl = `${NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-invoice-pdf`;
 
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -167,7 +168,7 @@ export async function processRefund(params: {
       return null;
     }
 
-    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-refund`;
+    const apiUrl = `${NEXT_PUBLIC_SUPABASE_URL}/functions/v1/process-refund`;
 
     const response = await fetch(apiUrl, {
       method: 'POST',

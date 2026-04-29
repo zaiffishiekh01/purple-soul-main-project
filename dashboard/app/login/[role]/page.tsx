@@ -1,0 +1,10 @@
+import { PublicRoute } from '@/src/components/PublicRoute';
+import { Auth } from '@/src/components/Auth';
+
+export default function LoginRolePage() {
+  return (
+    <PublicRoute>
+      <Auth />
+    </PublicRoute>
+  );
+}
