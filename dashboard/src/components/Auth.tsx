@@ -6,6 +6,17 @@ import { LogIn, UserPlus, ArrowLeft, Eye, EyeOff, KeyRound, Shield, Clock, Check
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
+const DEV_QUICK_LOGIN = {
+  vendor: {
+    email: 'test.vendor@purple-soul.com',
+    password: 'VendorTest123!',
+  },
+  admin: {
+    email: 'fk.envcal@gmail.com',
+    password: 'Admin123!',
+  },
+} as const;
+
 function AdminRequestAccess({ onBack }: { onBack: () => void }) {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
@@ -145,6 +156,7 @@ export function Auth() {
   const { signIn, signUp, resetPassword } = useAuth();
 
   const isAdmin = role === 'admin';
+  const isDev = process.env.NODE_ENV === 'development';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -182,6 +194,27 @@ export function Auth() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDevQuickLogin = async () => {
+    const creds = isAdmin ? DEV_QUICK_LOGIN.admin : DEV_QUICK_LOGIN.vendor;
+    setEmail(creds.email);
+    setPassword(creds.password);
+    setError('');
+    setLoading(true);
+
+    try {
+      const { isAdmin: userIsAdmin } = await signIn(creds.email, creds.password);
+      if (userIsAdmin) {
+        router.replace('/admin/dashboard');
+      } else {
+        router.replace('/vendor/dashboard');
+      }
+    } catch (err) {
+      console.error('Dev quick login error:', err);
+      setError(err instanceof Error ? err.message : 'An error occurred');
       setLoading(false);
     }
   };
@@ -324,6 +357,21 @@ export function Auth() {
               </form>
 
               <div className="mt-5 text-center space-y-3">
+                {isDev && !isSignUp && (
+                  <button
+                    type="button"
+                    onClick={handleDevQuickLogin}
+                    disabled={loading}
+                    className={`w-full px-6 py-2.5 rounded-xl border font-medium transition-all disabled:opacity-50 ${
+                      isAdmin
+                        ? 'border-emerald-300 text-emerald-700 hover:bg-emerald-50'
+                        : 'border-blue-300 text-blue-700 hover:bg-blue-50'
+                    }`}
+                  >
+                    {isAdmin ? 'Dev Bypass: Login as Admin' : 'Dev Bypass: Login as Vendor'}
+                  </button>
+                )}
+
                 {!isSignUp && (
                   <button
                     type="button"

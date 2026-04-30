@@ -4,6 +4,17 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback,
 import { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
+const DEV_BYPASS_CREDENTIALS = {
+  vendor: {
+    email: 'test.vendor@purple-soul.com',
+    password: 'VendorTest123!',
+  },
+  admin: {
+    email: 'fk.envcal@gmail.com',
+    password: 'Admin123!',
+  },
+} as const;
+
 interface AuthContextType {
   user: User | null;
   userId: string | null;
@@ -17,6 +28,19 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+function createDevMockUser(email: string): User {
+  return {
+    id: email === DEV_BYPASS_CREDENTIALS.admin.email
+      ? '00000000-0000-0000-0000-000000000001'
+      : '00000000-0000-0000-0000-000000000002',
+    app_metadata: {},
+    user_metadata: {},
+    aud: 'authenticated',
+    created_at: new Date().toISOString(),
+    email,
+  } as User;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const renderCountRef = useRef(0);
@@ -125,17 +149,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = useCallback(async (email: string, password: string): Promise<{ isAdmin: boolean }> => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
+    const isDev = process.env.NODE_ENV === 'development';
+    const isDevAdminCreds =
+      email === DEV_BYPASS_CREDENTIALS.admin.email &&
+      password === DEV_BYPASS_CREDENTIALS.admin.password;
+    const isDevVendorCreds =
+      email === DEV_BYPASS_CREDENTIALS.vendor.email &&
+      password === DEV_BYPASS_CREDENTIALS.vendor.password;
 
-    if (error) {
-      throw error;
-    }
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-    if (!data.user) {
-      throw new Error('No user returned from sign in');
+    if (error || !data.user) {
+      if (isDev && (isDevAdminCreds || isDevVendorCreds)) {
+        const mockUser = createDevMockUser(email);
+        const adminStatus = isDevAdminCreds;
+        setUser(mockUser);
+        setUserId(mockUser.id);
+        setUserEmail(mockUser.email || null);
+        setIsAdmin(adminStatus);
+        return { isAdmin: adminStatus };
+      }
+
+      throw error ?? new Error('No user returned from sign in');
     }
 
     const adminStatus = await checkAdminStatus(data.user.id);
