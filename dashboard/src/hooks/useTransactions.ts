@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { supabase } from '../lib/supabase';
+import { useCallback, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { loadTransactionsWithVendors } from '../lib/dashboard-relational-loaders';
+import { dashboardKeys } from '../lib/dashboard-query-keys';
 import { Transaction } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
-interface FinanceMetrics {
+export interface FinanceMetrics {
   balance: number;
   pendingPayouts: number;
   monthlyRevenue: number;
@@ -13,130 +15,78 @@ interface FinanceMetrics {
   totalPayouts: number;
 }
 
-export function useTransactions(vendorId?: string) {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [metrics, setMetrics] = useState<FinanceMetrics>({
-    balance: 0,
-    pendingPayouts: 0,
-    monthlyRevenue: 0,
-    totalSales: 0,
-    totalRefunds: 0,
-    totalFees: 0,
-    totalPayouts: 0,
+function calculateMetrics(txns: Transaction[]): FinanceMetrics {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  let balance = 0;
+  let pendingPayouts = 0;
+  let monthlyRevenue = 0;
+  let totalSales = 0;
+  let totalRefunds = 0;
+  let totalFees = 0;
+  let totalPayouts = 0;
+
+  txns.forEach((txn) => {
+    const txnDate = new Date(txn.created_at);
+    const amount = parseFloat(txn.amount.toString());
+
+    if (txn.type === 'sale') {
+      totalSales += amount;
+      if (txn.status === 'completed') {
+        balance += amount;
+      } else if (txn.status === 'pending') {
+        pendingPayouts += amount;
+      }
+
+      if (txnDate >= startOfMonth) {
+        monthlyRevenue += amount;
+      }
+    } else if (txn.type === 'refund') {
+      totalRefunds += Math.abs(amount);
+      balance += amount;
+
+      if (txnDate >= startOfMonth) {
+        monthlyRevenue += amount;
+      }
+    } else if (txn.type === 'fee') {
+      totalFees += Math.abs(amount);
+      balance += amount;
+    } else if (txn.type === 'payout') {
+      totalPayouts += Math.abs(amount);
+      balance += amount;
+    } else if (txn.type === 'adjustment') {
+      balance += amount;
+    }
   });
-  const [loading, setLoading] = useState(true);
-  const { isAdmin } = useAuth();
-  const isFetchingRef = useRef(false);
-  const vendorIdRef = useRef(vendorId);
 
-  useEffect(() => {
-    vendorIdRef.current = vendorId;
-  }, [vendorId]);
-
-  useEffect(() => {
-    if (isFetchingRef.current) return;
-
-    const fetchTransactions = async () => {
-      if (!vendorId && !isAdmin) {
-        setTransactions([]);
-        setLoading(false);
-        return;
-      }
-
-      isFetchingRef.current = true;
-      try {
-        setLoading(true);
-        let query = supabase
-          .from('transactions')
-          .select(`
-            *,
-            vendors (
-              id,
-              business_name,
-              contact_email
-            )
-          `);
-
-        if (!isAdmin && vendorId) {
-          query = query.eq('vendor_id', vendorId);
-        }
-
-        query = query.order('created_at', { ascending: false });
-
-        const { data, error } = await query;
-
-        if (error) throw error;
-
-        const transactionData = data || [];
-        setTransactions(transactionData);
-        calculateMetrics(transactionData);
-      } catch (error) {
-        console.error('Error fetching transactions:', error);
-        setTransactions([]);
-      } finally {
-        setLoading(false);
-        isFetchingRef.current = false;
-      }
-    };
-
-    fetchTransactions();
-  }, [vendorId, isAdmin]);
-
-  const calculateMetrics = (txns: Transaction[]) => {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-    let balance = 0;
-    let pendingPayouts = 0;
-    let monthlyRevenue = 0;
-    let totalSales = 0;
-    let totalRefunds = 0;
-    let totalFees = 0;
-    let totalPayouts = 0;
-
-    txns.forEach((txn) => {
-      const txnDate = new Date(txn.created_at);
-      const amount = parseFloat(txn.amount.toString());
-
-      if (txn.type === 'sale') {
-        totalSales += amount;
-        if (txn.status === 'completed') {
-          balance += amount;
-        } else if (txn.status === 'pending') {
-          pendingPayouts += amount;
-        }
-
-        if (txnDate >= startOfMonth) {
-          monthlyRevenue += amount;
-        }
-      } else if (txn.type === 'refund') {
-        totalRefunds += Math.abs(amount);
-        balance += amount;
-
-        if (txnDate >= startOfMonth) {
-          monthlyRevenue += amount;
-        }
-      } else if (txn.type === 'fee') {
-        totalFees += Math.abs(amount);
-        balance += amount;
-      } else if (txn.type === 'payout') {
-        totalPayouts += Math.abs(amount);
-        balance += amount;
-      } else if (txn.type === 'adjustment') {
-        balance += amount;
-      }
-    });
-
-    setMetrics({
-      balance: Math.max(0, balance),
-      pendingPayouts,
-      monthlyRevenue,
-      totalSales,
-      totalRefunds,
-      totalFees,
-      totalPayouts,
-    });
+  return {
+    balance: Math.max(0, balance),
+    pendingPayouts,
+    monthlyRevenue,
+    totalSales,
+    totalRefunds,
+    totalFees,
+    totalPayouts,
   };
+}
+
+export function useTransactions(vendorId?: string) {
+  const { isAdmin } = useAuth();
+
+  const query = useQuery({
+    queryKey: dashboardKeys.transactions({ isAdmin, vendorId: vendorId ?? null }),
+    queryFn: () =>
+      loadTransactionsWithVendors({
+        isAdmin,
+        vendorId: vendorId ?? undefined,
+      }),
+    enabled: isAdmin || !!vendorId,
+  });
+
+  const transactions = (query.data ?? []) as Transaction[];
+
+  const metrics = useMemo(() => calculateMetrics(transactions), [transactions]);
 
   const exportTransactions = useCallback(() => {
     const csv = [
@@ -164,47 +114,17 @@ export function useTransactions(vendorId?: string) {
   }, [transactions]);
 
   const refetch = useCallback(async () => {
-    const currentVendorId = vendorIdRef.current;
-    if (!currentVendorId && !isAdmin) return;
+    await query.refetch();
+  }, [query]);
 
-    try {
-      setLoading(true);
-      let query = supabase
-        .from('transactions')
-        .select(`
-          *,
-          vendors (
-            id,
-            business_name,
-            contact_email
-          )
-        `);
-
-      if (!isAdmin && currentVendorId) {
-        query = query.eq('vendor_id', currentVendorId);
-      }
-
-      query = query.order('created_at', { ascending: false });
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      const transactionData = data || [];
-      setTransactions(transactionData);
-      calculateMetrics(transactionData);
-    } catch (error) {
-      console.error('Error fetching transactions:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [isAdmin]);
-
-  return useMemo(() => ({
-    transactions,
-    metrics,
-    loading,
-    exportTransactions,
-    refetch,
-  }), [transactions, metrics, loading, exportTransactions, refetch]);
+  return useMemo(
+    () => ({
+      transactions,
+      metrics,
+      loading: query.isPending || query.isRefetching,
+      exportTransactions,
+      refetch,
+    }),
+    [transactions, metrics, query.isPending, query.isRefetching, exportTransactions, refetch]
+  );
 }

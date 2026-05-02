@@ -4,7 +4,7 @@
 Creating a new admin from the Admin Dashboard returns:
 ```
 Edge Function returned a non-2xx status code
-POST https://naesxujdffcmatntrlfr.supabase.co/functions/v1/create-admin 401 (Unauthorized)
+POST https://your-dashboard.example.com/api/functions/create-admin 401 (Unauthorized)
 ```
 
 ---
@@ -114,13 +114,13 @@ supabase functions deploy create-admin
 **Fix:**
 ```bash
 supabase secrets set \
-  SUPABASE_URL=https://naesxujdffcmatntrlfr.supabase.co \
+  SUPABASE_URL=https://your-dashboard.example.com \
   SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY \
   --project-ref naesxujdffcmatntrlfr
 ```
 
 Find `SUPABASE_SERVICE_ROLE_KEY` at:
-https://supabase.com/dashboard/project/naesxujdffcmatntrlfr/settings/api
+https://your-database-admin.example/settings/api
 
 ---
 

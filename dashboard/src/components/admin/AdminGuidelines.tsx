@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BookOpen, Save, Plus, Trash2, Eye, EyeOff, Edit2, X } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { dashboardClient } from '../../lib/data-client';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface Guideline {
@@ -26,7 +26,7 @@ export function AdminGuidelines() {
 
   const fetchGuidelines = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('product_guidelines')
         .select('*')
         .order('section_order');
@@ -52,7 +52,7 @@ export function AdminGuidelines() {
 
   const handleSave = async (id: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('product_guidelines')
         .update({
           title: editForm.title,
@@ -75,7 +75,7 @@ export function AdminGuidelines() {
 
   const handleToggleActive = async (id: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('product_guidelines')
         .update({
           is_active: !currentStatus,
@@ -94,7 +94,7 @@ export function AdminGuidelines() {
 
   const handleAddNew = async () => {
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('product_guidelines')
         .insert({
           title: newGuideline.title,
@@ -120,7 +120,7 @@ export function AdminGuidelines() {
     if (!confirm('Are you sure you want to delete this guideline?')) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('product_guidelines')
         .delete()
         .eq('id', id);

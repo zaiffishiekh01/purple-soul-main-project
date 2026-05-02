@@ -1,5 +1,8 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { supabase } from '../lib/supabase';
+import { useCallback, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { dashboardClient } from '../lib/data-client';
+import { loadVendorInventoryWithProducts } from '../lib/dashboard-relational-loaders';
+import { dashboardKeys } from '../lib/dashboard-query-keys';
 
 export interface InventoryItem {
   id: string;
@@ -19,65 +22,42 @@ export interface InventoryItem {
   };
 }
 
-export function useInventory(vendorId?: string) {
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const isFetchingRef = useRef(false);
-  const vendorIdRef = useRef(vendorId);
-
-  useEffect(() => {
-    vendorIdRef.current = vendorId;
-  }, [vendorId]);
-
-  useEffect(() => {
-    if (isFetchingRef.current) return;
-
-    const fetchInventory = async () => {
-      if (!vendorId) {
-        setInventory([]);
-        setLoading(false);
-        return;
-      }
-
-      isFetchingRef.current = true;
-      try {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from('inventory')
-          .select(`
-            *,
-            products (
-              name,
-              sku
-            )
-          `)
-          .eq('vendor_id', vendorId)
-          .order('quantity', { ascending: true });
-
-        if (error) throw error;
-
-        const formattedData = (data || []).map(item => ({
-          ...item,
-          product_name: item.products?.name,
-          sku: item.products?.sku
-        }));
-
-        setInventory(formattedData);
-      } catch (error) {
-        console.error('Error fetching inventory:', error);
-        setInventory([]);
-      } finally {
-        setLoading(false);
-        isFetchingRef.current = false;
-      }
+function mapInventoryRows(rows: unknown[]): InventoryItem[] {
+  return rows.map((item) => {
+    const row = item as InventoryItem & { products?: { name: string; sku: string } };
+    return {
+      ...row,
+      product_name: row.products?.name,
+      sku: row.products?.sku,
     };
+  }) as InventoryItem[];
+}
 
-    fetchInventory();
-  }, [vendorId]);
+export function useInventory(vendorId?: string) {
+  const queryClient = useQueryClient();
 
-  const updateInventory = useCallback(async (id: string, updates: Partial<InventoryItem>) => {
-    try {
-      const { data, error } = await supabase
+  const query = useQuery({
+    queryKey: vendorId
+      ? dashboardKeys.inventoryVendor(vendorId)
+      : (['dashboard', 'inventory', 'vendor', 'none'] as const),
+    queryFn: async () => {
+      if (!vendorId) return [];
+      const rows = await loadVendorInventoryWithProducts(vendorId);
+      return mapInventoryRows(rows ?? []);
+    },
+    enabled: !!vendorId,
+  });
+
+  const inventory = (query.data ?? []) as InventoryItem[];
+
+  const invalidate = useCallback(() => {
+    if (!vendorId) return Promise.resolve();
+    return queryClient.invalidateQueries({ queryKey: dashboardKeys.inventoryVendor(vendorId) });
+  }, [queryClient, vendorId]);
+
+  const updateInventory = useCallback(
+    async (id: string, updates: Partial<InventoryItem>) => {
+      const { data, error } = await dashboardClient
         .from('inventory')
         .update(updates)
         .eq('id', id)
@@ -85,83 +65,47 @@ export function useInventory(vendorId?: string) {
         .single();
 
       if (error) throw error;
-      setInventory(prev => prev.map((item) => (item.id === id ? data : item)));
+      await invalidate();
       return data;
-    } catch (error) {
-      console.error('Error updating inventory:', error);
-      throw error;
-    }
-  }, []);
+    },
+    [invalidate]
+  );
 
-  const restockItem = useCallback(async (id: string, additionalQuantity: number) => {
-    try {
-      setInventory(prev => {
-        const item = prev.find((i) => i.id === id);
-        if (!item) throw new Error('Inventory item not found');
+  const restockItem = useCallback(
+    async (id: string, additionalQuantity: number) => {
+      const item = inventory.find((i) => i.id === id);
+      if (!item) throw new Error('Inventory item not found');
 
-        const newQuantity = item.quantity + additionalQuantity;
-        supabase
-          .from('inventory')
-          .update({
-            quantity: newQuantity,
-            last_restocked_at: new Date().toISOString(),
-          })
-          .eq('id', id)
-          .select()
-          .single()
-          .then(({ data, error }) => {
-            if (error) throw error;
-            setInventory(p => p.map((i) => (i.id === id ? data : i)));
-          })
-          .catch(error => console.error('Error restocking item:', error));
-
-        return prev;
-      });
-    } catch (error) {
-      console.error('Error restocking item:', error);
-      throw error;
-    }
-  }, []);
-
-  const refetch = useCallback(async () => {
-    const currentVendorId = vendorIdRef.current;
-    if (!currentVendorId) return;
-
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
+      const newQuantity = item.quantity + additionalQuantity;
+      const { data, error } = await dashboardClient
         .from('inventory')
-        .select(`
-          *,
-          products (
-            name,
-            sku
-          )
-        `)
-        .eq('vendor_id', currentVendorId)
-        .order('quantity', { ascending: true });
+        .update({
+          quantity: newQuantity,
+          last_restocked_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select()
+        .single();
 
       if (error) throw error;
+      await invalidate();
+      return data;
+    },
+    [inventory, invalidate]
+  );
 
-      const formattedData = (data || []).map(item => ({
-        ...item,
-        product_name: item.products?.name,
-        sku: item.products?.sku
-      }));
+  const refetch = useCallback(async () => {
+    await query.refetch();
+  }, [query]);
 
-      setInventory(formattedData);
-    } catch (error) {
-      console.error('Error fetching inventory:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  return useMemo(() => ({
-    inventory,
-    loading,
-    updateInventory,
-    restockItem,
-    refetch,
-  }), [inventory, loading, updateInventory, restockItem, refetch]);
+  return useMemo(
+    () => ({
+      inventory,
+      loading: query.isPending || query.isRefetching,
+      updateInventory,
+      restockItem,
+      refetch,
+    }),
+    [inventory, query.isPending, query.isRefetching, updateInventory, restockItem, refetch]
+  );
 }

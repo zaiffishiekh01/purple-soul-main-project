@@ -1,5 +1,5 @@
-import { supabase } from './supabase';
-import { NEXT_PUBLIC_SUPABASE_URL } from './env';
+import { dashboardClient } from './data-client';
+import { authenticatedFetch } from './authenticated-fetch';
 
 export interface PaymentIntentRequest {
   amount: number;
@@ -9,24 +9,18 @@ export interface PaymentIntentRequest {
 }
 
 export async function createPaymentIntent(
-  request: PaymentIntentRequest
+  request: PaymentIntentRequest,
 ): Promise<{ clientSecret: string; paymentIntentId: string } | null> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await dashboardClient.auth.getSession();
 
     if (!session) {
       console.error('No active session');
       return null;
     }
 
-    const apiUrl = `${NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create-payment-intent`;
-
-    const response = await fetch(apiUrl, {
+    const response = await authenticatedFetch(`/api/functions/create-payment-intent`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(request),
     });
 
@@ -52,21 +46,15 @@ export async function calculateShippingRates(params: {
   height?: number;
 }): Promise<any[] | null> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await dashboardClient.auth.getSession();
 
     if (!session) {
       console.error('No active session');
       return null;
     }
 
-    const apiUrl = `${NEXT_PUBLIC_SUPABASE_URL}/functions/v1/calculate-shipping-rates`;
-
-    const response = await fetch(apiUrl, {
+    const response = await authenticatedFetch(`/api/functions/calculate-shipping-rates`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(params),
     });
 
@@ -90,21 +78,15 @@ export async function generateShippingLabel(params: {
   serviceType: string;
 }): Promise<{ html: string; trackingNumber: string } | null> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await dashboardClient.auth.getSession();
 
     if (!session) {
       console.error('No active session');
       return null;
     }
 
-    const apiUrl = `${NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-shipping-label`;
-
-    const response = await fetch(apiUrl, {
+    const response = await authenticatedFetch(`/api/functions/generate-shipping-label`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(params),
     });
 
@@ -123,21 +105,15 @@ export async function generateShippingLabel(params: {
 
 export async function generateInvoicePDF(orderId: string): Promise<string | null> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await dashboardClient.auth.getSession();
 
     if (!session) {
       console.error('No active session');
       return null;
     }
 
-    const apiUrl = `${NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-invoice-pdf`;
-
-    const response = await fetch(apiUrl, {
+    const response = await authenticatedFetch(`/api/functions/generate-invoice-pdf`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({ orderId }),
     });
 
@@ -161,21 +137,15 @@ export async function processRefund(params: {
   notes?: string;
 }): Promise<{ success: boolean; message: string; refund_id?: string } | null> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await dashboardClient.auth.getSession();
 
     if (!session) {
       console.error('No active session');
       return null;
     }
 
-    const apiUrl = `${NEXT_PUBLIC_SUPABASE_URL}/functions/v1/process-refund`;
-
-    const response = await fetch(apiUrl, {
+    const response = await authenticatedFetch(`/api/functions/process-refund`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(params),
     });
 

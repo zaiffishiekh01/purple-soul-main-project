@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Warehouse, Package, DollarSign, Plus, CreditCard as Edit2, Trash2, Check, X, Search, Filter, Calendar, Truck as TruckIcon, BarChart3, FileText, Clock, CheckCircle, XCircle, Users, Box } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { dashboardClient } from '../../lib/data-client';
 
 type ViewMode = 'plans' | 'requests' | 'shipments' | 'inventory' | 'metrics';
 
@@ -141,7 +141,7 @@ export function AdminWarehouseManagement() {
   };
 
   const loadVendors = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await dashboardClient
       .from('vendors')
       .select('id, business_name, contact_email')
       .in('status', ['active', 'approved'])
@@ -151,7 +151,7 @@ export function AdminWarehouseManagement() {
   };
 
   const fetchStoragePlans = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await dashboardClient
       .from('warehouse_storage_plans')
       .select('*')
       .order('display_order');
@@ -160,7 +160,7 @@ export function AdminWarehouseManagement() {
   };
 
   const fetchRequests = async () => {
-    let query = supabase
+    let query = dashboardClient
       .from('warehouse_requests')
       .select('*, vendors(business_name, contact_email), warehouse_storage_plans(plan_name)')
       .order('created_at', { ascending: false });
@@ -174,7 +174,7 @@ export function AdminWarehouseManagement() {
   };
 
   const fetchInboundShipments = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await dashboardClient
       .from('warehouse_inbound_shipments')
       .select('*, vendors(business_name), warehouse_requests(request_type)')
       .order('expected_arrival_date', { ascending: false });
@@ -183,7 +183,7 @@ export function AdminWarehouseManagement() {
   };
 
   const fetchWarehouseInventory = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await dashboardClient
       .from('warehouse_inventory')
       .select('*, vendors(business_name)')
       .order('created_at', { ascending: false });
@@ -235,13 +235,13 @@ export function AdminWarehouseManagement() {
 
     let error;
     if (editingPlan) {
-      const result = await supabase
+      const result = await dashboardClient
         .from('warehouse_storage_plans')
         .update(planData)
         .eq('id', editingPlan.id);
       error = result.error;
     } else {
-      const result = await supabase
+      const result = await dashboardClient
         .from('warehouse_storage_plans')
         .insert(planData);
       error = result.error;
@@ -261,7 +261,7 @@ export function AdminWarehouseManagement() {
   const handleDeletePlan = async (planId: string) => {
     if (!confirm('Are you sure you want to delete this plan?')) return;
 
-    const { error } = await supabase
+    const { error } = await dashboardClient
       .from('warehouse_storage_plans')
       .delete()
       .eq('id', planId);
@@ -340,7 +340,7 @@ export function AdminWarehouseManagement() {
       .map(c => c.trim())
       .filter(c => c.length > 0);
 
-    const { error } = await supabase
+    const { error } = await dashboardClient
       .from('warehouse_requests')
       .insert({
         vendor_id: requestFormData.vendor_id,
@@ -416,7 +416,7 @@ export function AdminWarehouseManagement() {
       updateData.rejection_reason = rejectionReason;
     }
 
-    const { error } = await supabase
+    const { error } = await dashboardClient
       .from('warehouse_requests')
       .update(updateData)
       .eq('id', requestId);

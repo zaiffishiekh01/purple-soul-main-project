@@ -12,7 +12,7 @@ import {
   CheckCircle,
   AlertCircle,
 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { dashboardClient } from '../../lib/data-client';
 
 interface Category {
   id: string;
@@ -76,7 +76,7 @@ export function VendorCatalogRules() {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('categories')
         .select('*')
         .eq('is_active', true)
@@ -94,7 +94,7 @@ export function VendorCatalogRules() {
 
   const fetchCategoryFacets = async (categoryId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('category_facets')
         .select(`
           *,
@@ -117,7 +117,7 @@ export function VendorCatalogRules() {
 
   const fetchFacetValues = async (facetIds: string[]) => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('facet_values')
         .select('*')
         .in('facet_id', facetIds)
@@ -528,7 +528,6 @@ export function VendorCatalogRules() {
                 <button
                   onClick={() => {
                     // This would navigate to support, but since we're in read-only mode, we'll just log
-                    console.log('Navigate to support');
                   }}
                   className="px-4 py-2 bg-white text-amber-900 border border-amber-300 rounded-lg hover:bg-amber-50 transition-colors text-sm font-medium"
                 >

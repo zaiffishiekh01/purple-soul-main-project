@@ -28,7 +28,7 @@ The Admin Dashboard is the **SINGLE SOURCE OF TRUTH** for all storefront navigat
 │             ↓ PUBLISHES TO ↓                    │
 │                                                  │
 │  Edge Function: get-catalog-navigation          │
-│  Endpoint: /functions/v1/get-catalog-navigation │
+│  Endpoint: /api/catalog/navigation │
 │                                                  │
 │  Returns:                                        │
 │  • navigation tree (hierarchical)               │
@@ -121,7 +121,7 @@ CREATE TABLE categories (
 
 ## API Response Structure
 
-### GET /functions/v1/get-catalog-navigation
+### GET /api/catalog/navigation
 
 **Response:**
 ```json
@@ -500,7 +500,7 @@ WHERE id = 'uuid';
 // Fetch navigation on app load
 async function initNavigation() {
   const response = await fetch(
-    'https://project.supabase.co/functions/v1/get-catalog-navigation'
+    'https://your-dashboard.example.com/api/catalog/navigation'
   );
   const { data } = await response.json();
 
@@ -609,7 +609,7 @@ class NavigationCache {
     }
 
     const response = await fetch(
-      'https://project.supabase.co/functions/v1/get-catalog-navigation'
+      'https://your-dashboard.example.com/api/catalog/navigation'
     );
     const result = await response.json();
 
@@ -652,7 +652,7 @@ const navigation = await navCache.getNavigation();
 UPDATE categories SET navigation_label = 'Custom Label' WHERE slug = 'test';
 
 # 2. Fetch API
-curl https://project.supabase.co/functions/v1/get-catalog-navigation
+curl https://your-dashboard.example.com/api/catalog/navigation
 
 # 3. Verify response
 # Expected: menu_label = 'Custom Label'
@@ -665,7 +665,7 @@ curl https://project.supabase.co/functions/v1/get-catalog-navigation
 UPDATE categories SET show_in_navigation = false WHERE slug = 'test';
 
 # 2. Fetch API
-curl https://project.supabase.co/functions/v1/get-catalog-navigation
+curl https://your-dashboard.example.com/api/catalog/navigation
 
 # 3. Verify response
 # Expected: Category not in navigation array
@@ -679,7 +679,7 @@ UPDATE categories SET display_order = 10 WHERE slug = 'fashion';
 UPDATE categories SET display_order = 5 WHERE slug = 'books';
 
 # 2. Fetch API
-curl https://project.supabase.co/functions/v1/get-catalog-navigation
+curl https://your-dashboard.example.com/api/catalog/navigation
 
 # 3. Verify response
 # Expected: Books (order 5) before Fashion (order 10)
@@ -691,7 +691,7 @@ curl https://project.supabase.co/functions/v1/get-catalog-navigation
 UPDATE categories SET url_slug_override = 'custom-path' WHERE slug = 'test';
 
 # 2. Fetch API
-curl https://project.supabase.co/functions/v1/get-catalog-navigation
+curl https://your-dashboard.example.com/api/catalog/navigation
 
 # 3. Verify response
 # Expected: route_slug = 'custom-path'
@@ -722,7 +722,7 @@ const categories = [
 ];
 
 // ✅ CORRECT
-const { data } = await fetch('/functions/v1/get-catalog-navigation');
+const { data } = await fetch('/api/catalog/navigation');
 const categories = data.navigation;
 ```
 
@@ -804,4 +804,4 @@ const url = `/category/${item.route_slug}`;
 
 **Authority:** Admin Dashboard
 **Consumer:** Storefront (read-only)
-**API:** /functions/v1/get-catalog-navigation
+**API:** /api/catalog/navigation

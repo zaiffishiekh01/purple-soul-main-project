@@ -26,27 +26,16 @@ All database security measures have been properly implemented:
    - NOT NULL constraints on required fields
    - UNIQUE constraints on business keys
 
-## Authentication Security
+## Authentication security (NextAuth)
 
-### Supabase Auth Configuration Required
+This dashboard uses **NextAuth** with credentials and **cookie sessions** (not Supabase Auth).
 
-**⚠️ Action Required: Enable Leaked Password Protection**
+Recommended practices:
 
-To enhance security, enable leaked password protection in your Supabase dashboard:
-
-1. Go to your [Supabase Dashboard](https://app.supabase.com)
-2. Select your project
-3. Navigate to **Authentication** → **Providers** → **Email**
-4. Enable **"Check passwords against HaveIBeenPwned"**
-5. Click **Save**
-
-**What this does:**
-- Checks user passwords against HaveIBeenPwned.org database
-- Prevents users from using compromised passwords
-- Adds an extra layer of account security
-- No performance impact on authentication
-
-**Note:** This setting must be configured in the Supabase dashboard and cannot be set via SQL migrations.
+- Use a long random **`AUTH_SECRET`** (see `.env.example`).
+- Keep **`NEXTAUTH_URL`** aligned with the public URL users open in the browser.
+- Enforce password quality in your **signup / reset-password** flows and in Postgres constraints as needed.
+- If you want HIBP-style checks, implement them in **`/api/auth/signup`** or your password-reset handler — there is no Supabase dashboard toggle for this stack.
 
 ## Index Strategy
 

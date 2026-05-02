@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Package, Truck, Search, Plus, CreditCard as Edit2, Trash2, CheckCircle, XCircle, Settings, Eye } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { dashboardClient } from '../../lib/data-client';
+import { loadAdminShipmentsWithRelations } from '../../lib/dashboard-relational-loaders';
 
 interface Shipment {
   id: string;
@@ -60,22 +61,10 @@ export default function AdminShipping() {
   const fetchShipments = async () => {
     try {
       setLoading(true);
-      let query = supabase
-        .from('shipments')
-        .select(`
-          *,
-          orders (order_number, customer_name, total_amount),
-          vendors (business_name)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      setShipments(data || []);
+      const data = await loadAdminShipmentsWithRelations({
+        statusEq: statusFilter,
+      });
+      setShipments((data || []) as Shipment[]);
     } catch (error) {
       console.error('Error fetching shipments:', error);
     } finally {
@@ -86,7 +75,7 @@ export default function AdminShipping() {
   const fetchCarriers = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('carrier_integrations')
         .select('*')
         .order('carrier_name');
@@ -102,7 +91,7 @@ export default function AdminShipping() {
 
   const updateShipmentStatus = async (shipmentId: string, newStatus: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('shipments')
         .update({
           status: newStatus,
@@ -121,7 +110,7 @@ export default function AdminShipping() {
   const saveCarrier = async (carrierData: Partial<CarrierIntegration>) => {
     try {
       if (editingCarrier) {
-        const { error } = await supabase
+        const { error } = await dashboardClient
           .from('carrier_integrations')
           .update({
             ...carrierData,
@@ -131,7 +120,7 @@ export default function AdminShipping() {
 
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        const { error } = await dashboardClient
           .from('carrier_integrations')
           .insert([carrierData]);
 
@@ -153,7 +142,7 @@ export default function AdminShipping() {
     }
 
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('carrier_integrations')
         .delete()
         .eq('id', carrierId);
@@ -168,7 +157,7 @@ export default function AdminShipping() {
 
   const toggleCarrierStatus = async (carrierId: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('carrier_integrations')
         .update({ is_active: !currentStatus })
         .eq('id', carrierId);

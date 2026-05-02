@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { DollarSign, TrendingUp, Calendar, Download, Send, Clock } from 'lucide-react';
 import { Transaction } from '../types';
 import { PayoutSettingsModal } from './modals/PayoutSettingsModal';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 import { useVendor } from '../hooks/useVendor';
 
 interface PayoutSettings {
@@ -51,7 +51,7 @@ export function FinanceManagement({
 
   const fetchPlatformFee = async () => {
     try {
-      const { data } = await supabase
+      const { data } = await dashboardClient
         .from('platform_fees')
         .select('fee_percentage')
         .eq('vendor_id', vendor?.id)
@@ -80,7 +80,7 @@ export function FinanceManagement({
     const netAmount = amount - fee;
 
     try {
-      const { error } = await supabase.from('payout_requests').insert({
+      const { error } = await dashboardClient.from('payout_requests').insert({
         vendor_id: vendor?.id,
         amount,
         platform_fee: fee,

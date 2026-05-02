@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 import { useAuth } from '../contexts/AuthContext';
 
 export interface SupportTicket {
@@ -41,7 +41,7 @@ export function useSupportTickets() {
 
   const fetchTickets = async () => {
     try {
-      const { data: vendorData } = await supabase
+      const { data: vendorData } = await dashboardClient
         .from('vendors')
         .select('id')
         .eq('user_id', userId)
@@ -52,7 +52,7 @@ export function useSupportTickets() {
         return;
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('support_tickets')
         .select('*')
         .eq('vendor_id', vendorData.id)
@@ -70,7 +70,7 @@ export function useSupportTickets() {
 
   const fetchTicketMessages = async (ticketId: string): Promise<TicketMessage[]> => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('ticket_messages')
         .select('*')
         .eq('ticket_id', ticketId)
@@ -91,7 +91,7 @@ export function useSupportTickets() {
     priority: string;
   }) => {
     try {
-      const { data: vendorData } = await supabase
+      const { data: vendorData } = await dashboardClient
         .from('vendors')
         .select('id')
         .eq('user_id', userId)
@@ -99,7 +99,7 @@ export function useSupportTickets() {
 
       if (!vendorData) throw new Error('Vendor not found');
 
-      const ticketCount = await supabase
+      const ticketCount = await dashboardClient
         .from('support_tickets')
         .select('id', { count: 'exact', head: true });
 
@@ -107,7 +107,7 @@ export function useSupportTickets() {
         (ticketCount.count || 0) + 1
       ).padStart(4, '0')}`;
 
-      const { data: ticket, error } = await supabase
+      const { data: ticket, error } = await dashboardClient
         .from('support_tickets')
         .insert({
           vendor_id: vendorData.id,
@@ -119,7 +119,7 @@ export function useSupportTickets() {
 
       if (error) throw error;
 
-      const { error: messageError } = await supabase.from('ticket_messages').insert({
+      const { error: messageError } = await dashboardClient.from('ticket_messages').insert({
         ticket_id: ticket.id,
         sender_type: 'vendor',
         message: ticketData.description,
@@ -137,7 +137,7 @@ export function useSupportTickets() {
 
   const addMessage = async (ticketId: string, message: string) => {
     try {
-      const { error } = await supabase.from('ticket_messages').insert({
+      const { error } = await dashboardClient.from('ticket_messages').insert({
         ticket_id: ticketId,
         sender_type: 'vendor',
         message,
@@ -145,7 +145,7 @@ export function useSupportTickets() {
 
       if (error) throw error;
 
-      const { error: updateError } = await supabase
+      const { error: updateError } = await dashboardClient
         .from('support_tickets')
         .update({ updated_at: new Date().toISOString() })
         .eq('id', ticketId);
@@ -167,7 +167,7 @@ export function useSupportTickets() {
         updates.resolved_at = new Date().toISOString();
       }
 
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('support_tickets')
         .update(updates)
         .eq('id', ticketId);

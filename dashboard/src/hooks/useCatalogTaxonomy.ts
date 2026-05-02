@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 
 export interface TaxonomyCategory {
   id: string;
@@ -23,7 +23,7 @@ export function useCatalogTaxonomy() {
 
   const loadCategories = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('categories')
         .select('*')
         .eq('is_active', true)
@@ -77,7 +77,7 @@ export function useFlatCatalogTaxonomy() {
 
   const loadCategories = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('categories')
         .select('*')
         .eq('is_active', true)

@@ -1,5 +1,5 @@
--- Quick Fix: Apply this in your Supabase SQL Editor
--- Go to: https://app.supabase.com/project/naesxujdffcmatntrlfr/sql
+-- Quick fix: run against your Postgres (psql, GUI, or CI), not a hosted SQL editor.
+-- Prefer adding a new file under postgres/migrations/ and applying with: npm run db:apply-migrations
 
 -- 1. Add missing columns
 ALTER TABLE vendors ADD COLUMN IF NOT EXISTS can_view_customer_phone boolean DEFAULT false;

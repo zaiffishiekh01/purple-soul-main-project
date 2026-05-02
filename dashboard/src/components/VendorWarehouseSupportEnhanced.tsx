@@ -21,7 +21,7 @@ import {
   FileText,
   Download
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 import { WarehouseRequest, WarehouseRequestType } from '../types';
 
 interface VendorWarehouseSupportProps {
@@ -62,7 +62,7 @@ export function VendorWarehouseSupportEnhanced({ vendorId }: VendorWarehouseSupp
   };
 
   const fetchRequests = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await dashboardClient
       .from('warehouse_requests')
       .select('*')
       .eq('vendor_id', vendorId)
@@ -72,7 +72,7 @@ export function VendorWarehouseSupportEnhanced({ vendorId }: VendorWarehouseSupp
   };
 
   const fetchInboundShipments = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await dashboardClient
       .from('warehouse_inbound_shipments')
       .select('*')
       .eq('vendor_id', vendorId)
@@ -82,7 +82,7 @@ export function VendorWarehouseSupportEnhanced({ vendorId }: VendorWarehouseSupp
   };
 
   const fetchWarehouseInventory = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await dashboardClient
       .from('warehouse_inventory')
       .select('*')
       .eq('vendor_id', vendorId)
@@ -92,7 +92,7 @@ export function VendorWarehouseSupportEnhanced({ vendorId }: VendorWarehouseSupp
   };
 
   const fetchMetrics = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await dashboardClient
       .from('warehouse_performance_metrics')
       .select('*')
       .eq('vendor_id', vendorId)

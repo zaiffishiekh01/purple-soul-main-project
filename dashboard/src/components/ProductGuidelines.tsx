@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BookOpen, Download, ChevronDown, ChevronUp } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import { NEXT_PUBLIC_SUPABASE_URL } from '../lib/env';
+import { dashboardClient } from '../lib/data-client';
+import { authenticatedFetch } from '../lib/authenticated-fetch';
 
 interface Guideline {
   id: string;
@@ -23,7 +23,7 @@ export function ProductGuidelines() {
 
   const fetchGuidelines = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('product_guidelines')
         .select('*')
         .eq('is_active', true)
@@ -55,19 +55,14 @@ export function ProductGuidelines() {
   const downloadPDF = async () => {
     setDownloadingPDF(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await dashboardClient.auth.getSession();
       if (!session) {
         alert('Please log in to download the guidelines');
         return;
       }
 
-      const apiUrl = `${NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-guidelines-pdf`;
-      const response = await fetch(apiUrl, {
+      const response = await authenticatedFetch('/api/functions/generate-guidelines-pdf', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
       });
 
       if (!response.ok) {

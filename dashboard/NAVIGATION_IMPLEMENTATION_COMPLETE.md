@@ -20,7 +20,7 @@ The Admin Dashboard is now the **AUTHORITATIVE PUBLISHER** of all storefront nav
 - **route_slug** - Custom URL paths (via `url_slug_override` or `slug`)
 
 ### ✅ 3. Public API Returns Admin-Defined Structure
-- API endpoint: `/functions/v1/get-catalog-navigation`
+- API endpoint: `/api/catalog/navigation`
 - Returns `menu_label`, `menu_order`, `route_slug`, `show_in_navigation`
 - Metadata confirms Admin authority
 - No fallback or hardcoded labels
@@ -48,12 +48,11 @@ The Admin Dashboard is now the **AUTHORITATIVE PUBLISHER** of all storefront nav
 
 ## 📁 Files Modified/Created
 
-### Edge Functions (Deployed)
+### Next.js API (current)
 ```
-supabase/functions/get-catalog-navigation/index.ts
-  ✅ Enhanced to return menu_label, route_slug, menu_order
-  ✅ Added authority metadata
-  ✅ Deployed and live
+app/api/catalog/navigation/route.ts
+  ✅ Public GET handler for navigation payload
+  ✅ Authority metadata as implemented in code
 ```
 
 ### Admin Components
@@ -120,7 +119,7 @@ NAVIGATION_AUTHORITY.md (7,500+ words)
 
 ### API Response Structure
 
-**Endpoint:** `GET /functions/v1/get-catalog-navigation`
+**Endpoint:** `GET /api/catalog/navigation`
 
 **Key Response Fields:**
 ```json
@@ -219,7 +218,7 @@ Navigation renders
 ### Step 1: Fetch Navigation
 ```javascript
 const response = await fetch(
-  'https://your-project.supabase.co/functions/v1/get-catalog-navigation'
+  'https://your-dashboard.example.com/api/catalog/navigation'
 );
 const { data } = await response.json();
 ```
@@ -388,7 +387,7 @@ class NavigationCache {
       return this.cache;
     }
 
-    const response = await fetch('/functions/v1/get-catalog-navigation');
+    const response = await fetch('/api/catalog/navigation');
     const { data } = await response.json();
 
     this.cache = data;

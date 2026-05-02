@@ -20,7 +20,7 @@ import {
   FileUp,
   ExternalLink
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 import { WarehouseRequest, WarehouseRequestType, ReturnShippingOption } from '../types';
 
 interface VendorWarehouseSupportProps {
@@ -47,7 +47,7 @@ export function VendorWarehouseSupport({ vendorId }: VendorWarehouseSupportProps
 
   const fetchRequests = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('warehouse_requests')
         .select('*')
         .eq('vendor_id', vendorId)
@@ -177,7 +177,7 @@ function RequestForm({ vendorId, onCancel, onSuccess }: RequestFormProps) {
 
   const fetchCategories = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('category_groups')
         .select('id, name, slug')
         .eq('is_active', true)
@@ -210,7 +210,7 @@ function RequestForm({ vendorId, onCancel, onSuccess }: RequestFormProps) {
 
     setSubmitting(true);
     try {
-      const { error } = await supabase.from('warehouse_requests').insert({
+      const { error } = await dashboardClient.from('warehouse_requests').insert({
         vendor_id: vendorId,
         request_type: formData.request_type,
         expected_inventory_value: parseFloat(formData.expected_inventory_value),

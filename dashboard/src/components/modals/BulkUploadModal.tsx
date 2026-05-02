@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { X, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download } from 'lucide-react';
 import { useCategoryNames } from '../../hooks/useCategories';
-import { supabase } from '../../lib/supabase';
+import { dashboardClient } from '../../lib/data-client';
 
 interface BulkUploadModalProps {
   onClose: () => void;
@@ -33,17 +33,17 @@ export function BulkUploadModal({ onClose, onUpload }: BulkUploadModalProps) {
       const ext = imgFile.name.split('.').pop();
       const filePath = `sku-images/${skuInput.trim()}-${Date.now()}.${ext}`;
 
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError } = await dashboardClient.storage
         .from('product-images')
         .upload(filePath, imgFile, { upsert: true });
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
+      const { data: { publicUrl } } = dashboardClient.storage
         .from('product-images')
         .getPublicUrl(filePath);
 
-      const { data: products, error: fetchError } = await supabase
+      const { data: products, error: fetchError } = await dashboardClient
         .from('products')
         .select('id, images')
         .eq('sku', skuInput.trim());
@@ -58,7 +58,7 @@ export function BulkUploadModal({ onClose, onUpload }: BulkUploadModalProps) {
       const product = products[0];
       const updatedImages = [...(product.images || []), publicUrl];
 
-      const { error: updateError } = await supabase
+      const { error: updateError } = await dashboardClient
         .from('products')
         .update({ images: updatedImages })
         .eq('id', product.id);

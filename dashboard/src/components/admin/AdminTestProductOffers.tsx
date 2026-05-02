@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Beaker, Plus, CreditCard as Edit, Send, X, CheckCircle, XCircle, Users, Paperclip } from 'lucide-react';
 import { useAdminPermissions } from '../../hooks/useAdminPermissions';
 import { useTestProductOffers, useTestProductOfferVendorApplications, useTestProductOfferMessages } from '../../hooks/useTestProductOffers';
-import { supabase } from '../../lib/supabase';
+import { dashboardClient } from '../../lib/data-client';
 import { TestProductOffer, TestProductOfferVendor } from '../../types';
 
 export function AdminTestProductOffers() {
@@ -187,7 +187,7 @@ function OfferRow({
 
   useState(() => {
     const fetchCount = async () => {
-      const { count } = await supabase
+      const { count } = await dashboardClient
         .from('test_product_offer_vendors')
         .select('*', { count: 'exact', head: true })
         .eq('offer_id', offer.id);
@@ -318,13 +318,13 @@ function CreateOfferModal({
         const fileName = `test-offer-design-${Date.now()}-${i}.${fileExt}`;
         const filePath = `test-products/${fileName}`;
 
-        const { error: uploadError } = await supabase.storage
+        const { error: uploadError } = await dashboardClient.storage
           .from('test-products')
           .upload(filePath, file);
 
         if (uploadError) throw uploadError;
 
-        const { data: { publicUrl } } = supabase.storage
+        const { data: { publicUrl } } = dashboardClient.storage
           .from('test-products')
           .getPublicUrl(filePath);
 
@@ -348,10 +348,10 @@ function CreateOfferModal({
     setSubmitting(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await dashboardClient.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { data: admin } = await supabase
+      const { data: admin } = await dashboardClient
         .from('admin_users')
         .select('id')
         .eq('user_id', user.id)
@@ -388,13 +388,13 @@ function CreateOfferModal({
       };
 
       if (offer) {
-        const { error } = await supabase
+        const { error } = await dashboardClient
           .from('test_product_offers')
           .update(offerData)
           .eq('id', offer.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        const { error } = await dashboardClient
           .from('test_product_offers')
           .insert(offerData);
         if (error) throw error;
@@ -805,7 +805,7 @@ function OfferDetailsTab({ offer, onClose }: { offer: TestProductOffer; onClose:
   const updateStatus = async (newStatus: string) => {
     setUpdating(true);
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('test_product_offers')
         .update({ status: newStatus })
         .eq('id', offer.id);
@@ -948,7 +948,7 @@ function ApplicationsTab({ offer, onClose }: { offer: TestProductOffer; onClose:
   const updateApplicationStatus = async (appId: string, newStatus: string) => {
     setProcessingId(appId);
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('test_product_offer_vendors')
         .update({ status: newStatus })
         .eq('id', appId);
@@ -969,7 +969,7 @@ function ApplicationsTab({ offer, onClose }: { offer: TestProductOffer; onClose:
 
     setProcessingId(application.id);
     try {
-      await supabase
+      await dashboardClient
         .from('test_product_offers')
         .update({
           locked_vendor_id: application.vendor_id,
@@ -977,7 +977,7 @@ function ApplicationsTab({ offer, onClose }: { offer: TestProductOffer; onClose:
         })
         .eq('id', offer.id);
 
-      await supabase
+      await dashboardClient
         .from('test_product_offer_vendors')
         .update({ status: 'APPROVED_FOR_TEST' })
         .eq('id', application.id);

@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Building2, Mail, Phone, MapPin, Save, Upload, Loader2, CheckCircle } from 'lucide-react';
 import { Vendor } from '../types';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 
 interface VendorProfileProps {
   vendor: Vendor | null;
@@ -33,17 +33,17 @@ export function VendorProfile({ vendor, onUpdate }: VendorProfileProps) {
       const ext = file.name.split('.').pop();
       const filePath = `logos/${vendor.id}.${ext}`;
 
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError } = await dashboardClient.storage
         .from('product-images')
         .upload(filePath, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
+      const { data: { publicUrl } } = dashboardClient.storage
         .from('product-images')
         .getPublicUrl(filePath);
 
-      const { error: updateError } = await supabase
+      const { error: updateError } = await dashboardClient
         .from('vendors')
         .update({ logo_url: publicUrl })
         .eq('id', vendor.id);
@@ -75,7 +75,7 @@ export function VendorProfile({ vendor, onUpdate }: VendorProfileProps) {
         updated_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('vendors')
         .update(updates)
         .eq('id', vendor.id);

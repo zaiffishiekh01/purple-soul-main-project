@@ -8,7 +8,7 @@ Three public JSON API endpoints have been successfully implemented and are ready
 
 ## 🎯 What Was Implemented
 
-### 1. Express Server (`server.cjs`)
+### 1. Express Server (`Next.js`)
 
 A lightweight Express.js server that:
 - Serves the built React application
@@ -145,15 +145,15 @@ npm start
 ```bash
 # Using PM2 (recommended for production)
 npm install -g pm2
-pm2 start server.cjs --name vendor-dashboard
+pm2 start npm --name vendor-dashboard -- start
 pm2 save
 pm2 startup
 
 # Or using Docker
 docker build -t vendor-dashboard .
 docker run -d -p 3000:3000 \
-  -e VITE_SUPABASE_URL="..." \
-  -e VITE_SUPABASE_ANON_KEY="..." \
+  -e NEXTAUTH_URL="..." \
+  -e AUTH_SECRET="..." \
   vendor-dashboard
 ```
 
@@ -236,7 +236,7 @@ curl -i https://vendor.sufisciencecenter.info/api/catalog/invalid
                    │
                    ▼
 ┌─────────────────────────────────────────────┐
-│  Express Server (server.cjs)                │
+│  Express Server (Next.js)                │
 │  - Checks if route matches /api/catalog/*   │
 │  - Adds CORS headers                        │
 │  - Proxies to Supabase Edge Function        │
@@ -245,7 +245,7 @@ curl -i https://vendor.sufisciencecenter.info/api/catalog/invalid
                    ▼
 ┌─────────────────────────────────────────────┐
 │  Supabase Edge Function                     │
-│  /functions/v1/get-catalog-navigation       │
+│  /api/catalog/navigation       │
 │  - Queries database                         │
 │  - Returns JSON response                    │
 └──────────────────┬──────────────────────────┘
@@ -298,7 +298,7 @@ All errors return JSON:
 
 | File | Purpose |
 |------|---------|
-| `server.cjs` | Express server with API routes |
+| `Next.js` | Express server with API routes |
 | `PUBLIC_API_ENDPOINTS.md` | Complete API documentation |
 | `DEPLOYMENT_API_ENDPOINTS.md` | Deployment guide |
 | `test-api-endpoints.sh` | Automated testing script |
@@ -492,7 +492,7 @@ class APICache {
 
 **Solutions:**
 1. Verify API routes are defined BEFORE `app.use(express.static())`
-2. Check that `server.cjs` is being used, not just serving static files
+2. Check that `Next.js` is being used, not just serving static files
 3. Restart server after code changes
 
 ### Issue: CORS errors in browser

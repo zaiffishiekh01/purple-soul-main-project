@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 import { FeeWaiverRequest, FeeWaiverDocumentType } from '../types';
 
 export function useFeeWaiver(vendorId?: string) {
@@ -15,7 +15,7 @@ export function useFeeWaiver(vendorId?: string) {
     }
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('fee_waiver_requests')
         .select('*')
         .eq('vendor_id', vendorId)
@@ -41,7 +41,7 @@ export function useFeeWaiver(vendorId?: string) {
     const fileExt = file.name.split('.').pop();
     const fileName = `${vendorId}/${Date.now()}.${fileExt}`;
 
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError } = await dashboardClient.storage
       .from('fee-waiver-docs')
       .upload(fileName, file, {
         cacheControl: '3600',
@@ -64,7 +64,7 @@ export function useFeeWaiver(vendorId?: string) {
     try {
       const documentUrl = await uploadDocument(data.document, vendorId);
 
-      const { data: newRequest, error } = await supabase
+      const { data: newRequest, error } = await dashboardClient
         .from('fee_waiver_requests')
         .insert({
           vendor_id: vendorId,

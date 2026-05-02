@@ -1,7 +1,7 @@
 # CREATE-ADMIN 401 ERROR - DIAGNOSIS & FIX
 
 ## Current Issue
-**Error:** `POST https://naesxujdffcmatntrlfr.supabase.co/functions/v1/create-admin 401 (Unauthorized)`
+**Error:** `POST https://your-dashboard.example.com/api/functions/create-admin 401 (Unauthorized)`
 
 ## What I've Done
 
@@ -113,13 +113,13 @@ The edge function needs environment variables to work:
 
 ```bash
 supabase secrets set \
-  SUPABASE_URL=https://naesxujdffcmatntrlfr.supabase.co \
+  SUPABASE_URL=https://your-dashboard.example.com \
   SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY \
   --project-ref naesxujdffcmatntrlfr
 ```
 
 **Find your service role key:**
-1. Go to https://supabase.com/dashboard/project/naesxujdffcmatntrlfr
+1. Go to https://your-database-admin.example
 2. Click **Settings** (gear icon)
 3. Click **API**
 4. Copy the **service_role** key (NOT the anon key!)
@@ -145,7 +145,7 @@ Then sign in again and try creating an admin.
 Replace `YOUR_TOKEN` with your actual auth token (get from browser console: `supabase.auth.getSession().then(s => console.log(s.data.session.access_token))`):
 
 ```bash
-curl -X POST 'https://naesxujdffcmatntrlfr.supabase.co/functions/v1/create-admin' \
+curl -X POST 'https://your-dashboard.example.com/api/functions/create-admin' \
   -H 'Authorization: Bearer YOUR_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{

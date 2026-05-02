@@ -164,8 +164,8 @@ WHERE id = order_id;
 7. Order status updates to `shipped`
 
 **API Endpoints Used**:
-- `/functions/v1/calculate-shipping-rates`
-- `/functions/v1/generate-shipping-label`
+- `/api/calculate-shipping-rates`
+- `/api/generate-shipping-label`
 
 **Database Updates**:
 ```sql
@@ -207,7 +207,7 @@ WHERE id = order_id;
 **Action**: Click "Print Invoice" in order details
 
 **Process**:
-1. Calls `/functions/v1/generate-invoice-pdf`
+1. Calls `/api/generate-invoice-pdf`
 2. Returns formatted invoice HTML
 3. Opens print dialog
 4. Invoice includes:

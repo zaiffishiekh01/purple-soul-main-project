@@ -18,7 +18,7 @@ import {
   Calculator,
   Check
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 
 interface VendorWarehouseWithPricingProps {
   vendorId: string;
@@ -121,7 +121,7 @@ export function VendorWarehouseWithPricing({ vendorId }: VendorWarehouseWithPric
   };
 
   const fetchStoragePlans = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await dashboardClient
       .from('warehouse_storage_plans')
       .select('*')
       .eq('is_active', true)
@@ -131,7 +131,7 @@ export function VendorWarehouseWithPricing({ vendorId }: VendorWarehouseWithPric
   };
 
   const fetchRequests = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await dashboardClient
       .from('warehouse_requests')
       .select('*, warehouse_storage_plans(*)')
       .eq('vendor_id', vendorId)
@@ -141,7 +141,7 @@ export function VendorWarehouseWithPricing({ vendorId }: VendorWarehouseWithPric
   };
 
   const fetchInboundShipments = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await dashboardClient
       .from('warehouse_inbound_shipments')
       .select('*')
       .eq('vendor_id', vendorId)
@@ -151,7 +151,7 @@ export function VendorWarehouseWithPricing({ vendorId }: VendorWarehouseWithPric
   };
 
   const fetchWarehouseInventory = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await dashboardClient
       .from('warehouse_inventory')
       .select('*')
       .eq('vendor_id', vendorId)
@@ -161,7 +161,7 @@ export function VendorWarehouseWithPricing({ vendorId }: VendorWarehouseWithPric
   };
 
   const fetchMetrics = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await dashboardClient
       .from('warehouse_performance_metrics')
       .select('*')
       .eq('vendor_id', vendorId)
@@ -199,7 +199,7 @@ export function VendorWarehouseWithPricing({ vendorId }: VendorWarehouseWithPric
       .map(c => c.trim())
       .filter(c => c.length > 0);
 
-    const { error } = await supabase
+    const { error } = await dashboardClient
       .from('warehouse_requests')
       .insert({
         vendor_id: vendorId,

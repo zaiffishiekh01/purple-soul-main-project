@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 
 interface Category {
   id: string;
@@ -31,7 +31,7 @@ export function useNavigationSettings() {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const { data, error: fetchError } = await supabase
+      const { data, error: fetchError } = await dashboardClient
         .from('categories')
         .select('*')
         .order('display_order', { ascending: true });
@@ -53,7 +53,7 @@ export function useNavigationSettings() {
 
   const updateCategory = async (id: string, updates: Partial<Category>) => {
     try {
-      const { error: updateError } = await supabase
+      const { error: updateError } = await dashboardClient
         .from('categories')
         .update(updates)
         .eq('id', id);

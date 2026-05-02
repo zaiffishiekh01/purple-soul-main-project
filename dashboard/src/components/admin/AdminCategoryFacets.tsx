@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, Check, X, AlertCircle } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { dashboardClient } from '../../lib/data-client';
 
 interface Category {
   id: string;
@@ -43,9 +43,9 @@ export function AdminCategoryFacets() {
   const loadData = async () => {
     try {
       const [categoriesRes, facetGroupsRes, mappingsRes] = await Promise.all([
-        supabase.from('categories').select('*').order('level').order('display_order'),
-        supabase.from('facet_groups').select('*').order('display_order'),
-        supabase
+        dashboardClient.from('categories').select('*').order('level').order('display_order'),
+        dashboardClient.from('facet_groups').select('*').order('display_order'),
+        dashboardClient
           .from('category_facets')
           .select(`
             id,
@@ -78,7 +78,7 @@ export function AdminCategoryFacets() {
     }
 
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('category_facets')
         .insert({
           category_id: selectedCategory,
@@ -106,7 +106,7 @@ export function AdminCategoryFacets() {
     if (!confirm('Remove this mapping? Products will no longer be able to use this facet.')) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('category_facets')
         .delete()
         .eq('id', mappingId);
@@ -122,7 +122,7 @@ export function AdminCategoryFacets() {
 
   const handleToggleRequired = async (mappingId: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('category_facets')
         .update({ is_required: !currentStatus })
         .eq('id', mappingId);

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Settings, User, Lock, Bell, Shield, Truck, RotateCcw, Edit2, Trash2, Save, X, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { dashboardClient } from '../../lib/data-client';
 import { useShippingPrograms } from '../../hooks/useShippingPrograms';
 import { useReturnRules } from '../../hooks/useReturnRules';
 
@@ -86,7 +86,7 @@ export function AdminSettings() {
   const fetchProfile = async () => {
     try {
       setProfileLoading(true);
-      const { data: admin } = await supabase
+      const { data: admin } = await dashboardClient
         .from('admin_users')
         .select('id, full_name, role, is_super_admin')
         .eq('user_id', user?.id)
@@ -116,7 +116,7 @@ export function AdminSettings() {
       setSaving(true);
       
       // Update admin_users
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('admin_users')
         .update({ full_name: profileName.trim() })
         .eq('id', profile.id);
@@ -124,7 +124,7 @@ export function AdminSettings() {
       if (error) throw error;
 
       // Also update Supabase user metadata
-      const { error: userError } = await supabase.auth.updateUser({
+      const { error: userError } = await dashboardClient.auth.updateUser({
         data: { full_name: profileName.trim() }
       });
 
@@ -162,7 +162,7 @@ export function AdminSettings() {
 
     try {
       setSaving(true);
-      const { error } = await supabase.auth.updateUser({
+      const { error } = await dashboardClient.auth.updateUser({
         password: newPassword
       });
 
@@ -192,7 +192,7 @@ export function AdminSettings() {
   const fetchNotificationPreferences = async () => {
     try {
       setNotificationsLoading(true);
-      const { data: admin } = await supabase
+      const { data: admin } = await dashboardClient
         .from('admin_users')
         .select('id')
         .eq('user_id', user?.id)
@@ -200,7 +200,7 @@ export function AdminSettings() {
 
       if (!admin) return;
 
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('admin_preferences')
         .select('preference_key, preference_value')
         .eq('admin_id', admin.id)
@@ -221,7 +221,7 @@ export function AdminSettings() {
   const saveNotificationPreferences = async (prefs: NotificationPreferences) => {
     try {
       setNotificationsLoading(true);
-      const { data: admin } = await supabase
+      const { data: admin } = await dashboardClient
         .from('admin_users')
         .select('id')
         .eq('user_id', user?.id)
@@ -230,7 +230,7 @@ export function AdminSettings() {
       if (!admin) return;
 
       // Upsert notification preferences
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('admin_preferences')
         .upsert({
           admin_id: admin.id,
@@ -263,7 +263,7 @@ export function AdminSettings() {
   const fetchPlatformSettings = async () => {
     try {
       setPlatformLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('platform_settings')
         .select('setting_key, setting_value')
         .in('setting_key', ['platform_commission_rate', 'minimum_payout_amount', 'auto_approve_vendors']);
@@ -290,7 +290,7 @@ export function AdminSettings() {
   const savePlatformSetting = async (key: string, value: string) => {
     try {
       setSaving(true);
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('platform_settings')
         .upsert({
           setting_key: key,

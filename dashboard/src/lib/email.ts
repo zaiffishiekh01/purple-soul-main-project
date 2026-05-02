@@ -1,5 +1,5 @@
-import { supabase } from './supabase';
-import { NEXT_PUBLIC_SUPABASE_URL } from './env';
+import { dashboardClient } from './data-client';
+import { authenticatedFetch } from './authenticated-fetch';
 
 interface SendEmailParams {
   to: string;
@@ -10,21 +10,15 @@ interface SendEmailParams {
 
 export async function sendEmail({ to, subject, html, from }: SendEmailParams): Promise<boolean> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await dashboardClient.auth.getSession();
 
     if (!session) {
       console.error('No active session for sending email');
       return false;
     }
 
-    const apiUrl = `${NEXT_PUBLIC_SUPABASE_URL}/functions/v1/send-email`;
-
-    const response = await fetch(apiUrl, {
+    const response = await authenticatedFetch(`/api/functions/send-email`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({ to, subject, html, from }),
     });
 
@@ -43,7 +37,7 @@ export async function sendEmail({ to, subject, html, from }: SendEmailParams): P
 
 export async function sendOrderConfirmationEmail(orderId: string): Promise<boolean> {
   try {
-    const { data: order } = await supabase
+    const { data: order } = await dashboardClient
       .from('orders')
       .select(`
         *,
@@ -91,7 +85,7 @@ export async function sendOrderConfirmationEmail(orderId: string): Promise<boole
 
 export async function sendShippingNotificationEmail(shipmentId: string): Promise<boolean> {
   try {
-    const { data: shipment } = await supabase
+    const { data: shipment } = await dashboardClient
       .from('shipments')
       .select(`
         *,

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { dashboardClient } from '../../lib/data-client';
 import { useVendor } from '../../hooks/useVendor';
 
 interface ImportRecord {
@@ -35,7 +35,7 @@ export function ImportHistoryModal({ onClose }: ImportHistoryModalProps) {
     if (!vendorId) return;
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('product_imports')
         .select('*')
         .eq('vendor_id', vendorId)

@@ -6,7 +6,7 @@
 These migrations will be automatically applied when you deploy to Supabase:
 
 ```bash
-# Migrations are in: supabase/migrations/
+# Migrations are in: postgres/migrations/ (apply with: cd dashboard && npm run db:apply-migrations)
 
 20251117030000_add_missing_foreign_key_indexes.sql
 20251117030100_optimize_rls_vendors_products.sql
@@ -22,7 +22,7 @@ These migrations will be automatically applied when you deploy to Supabase:
 ### **Step 2: Manual Configuration (Required)**
 Enable password protection in Supabase Dashboard:
 
-1. Go to: https://supabase.com/dashboard/project/YOUR_PROJECT
+1. Go to: https://your-database-admin.example
 2. Navigate to: Authentication → Settings
 3. Find: "Password requirements"
 4. Enable: "Check passwords against HaveIBeenPwned"

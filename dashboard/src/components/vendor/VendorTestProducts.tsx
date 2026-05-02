@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Beaker, AlertCircle, Send, Paperclip, X, CheckCircle, XCircle, Plus } from 'lucide-react';
 import { useVendor } from '../../hooks/useVendor';
 import { useTestProductOffers, useTestProductOfferApplications, useTestProductOfferMessages } from '../../hooks/useTestProductOffers';
-import { supabase } from '../../lib/supabase';
+import { dashboardClient } from '../../lib/data-client';
 import { TestProductOffer, TestProductOfferVendor } from '../../types';
 import { RequestTestProductModal, MyRequestsTab } from './VendorTestProductRequest';
 
@@ -422,13 +422,13 @@ function ApplicationModal({
         const fileName = `vendor-sample-${Date.now()}-${i}.${fileExt}`;
         const filePath = `test-products/${fileName}`;
 
-        const { error: uploadError } = await supabase.storage
+        const { error: uploadError } = await dashboardClient.storage
           .from('test-products')
           .upload(filePath, file);
 
         if (uploadError) throw uploadError;
 
-        const { data: { publicUrl } } = supabase.storage
+        const { data: { publicUrl } } = dashboardClient.storage
           .from('test-products')
           .getPublicUrl(filePath);
 
@@ -450,7 +450,7 @@ function ApplicationModal({
   useState(() => {
     const fetchExistingApplication = async () => {
       try {
-        const { data } = await supabase
+        const { data } = await dashboardClient
           .from('test_product_offer_vendors')
           .select('*')
           .eq('offer_id', offer.id)
@@ -483,7 +483,7 @@ function ApplicationModal({
 
     try {
       // Validate offer is still open and not locked
-      const { data: currentOffer, error: fetchError } = await supabase
+      const { data: currentOffer, error: fetchError } = await dashboardClient
         .from('test_product_offers')
         .select('status, locked_vendor_id')
         .eq('id', offer.id)
@@ -514,7 +514,7 @@ function ApplicationModal({
         status: 'APPLIED',
       };
 
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('test_product_offer_vendors')
         .upsert(applicationData, { onConflict: 'offer_id,vendor_id' });
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 import { TestProductOffer, TestProductOfferVendor, TestProductOfferMessage } from '../types';
 
 export function useTestProductOffers(vendorId?: string) {
@@ -12,7 +12,7 @@ export function useTestProductOffers(vendorId?: string) {
       setLoading(true);
       setError(null);
 
-      const query = supabase
+      const query = dashboardClient
         .from('test_product_offers')
         .select(`
           *,
@@ -54,7 +54,7 @@ export function useTestProductOfferApplications(vendorId: string) {
       setLoading(true);
       setError(null);
 
-      const { data, error: fetchError } = await supabase
+      const { data, error: fetchError } = await dashboardClient
         .from('test_product_offer_vendors')
         .select(`
           *,
@@ -98,7 +98,7 @@ export function useTestProductOfferMessages(offerId: string) {
       setLoading(true);
       setError(null);
 
-      const { data, error: fetchError } = await supabase
+      const { data, error: fetchError } = await dashboardClient
         .from('test_product_offer_messages')
         .select(`
           *,
@@ -124,16 +124,16 @@ export function useTestProductOfferMessages(offerId: string) {
 
   const sendMessage = async (message: string, attachmentUrls: string[] = []) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await dashboardClient.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { data: vendor } = await supabase
+      const { data: vendor } = await dashboardClient
         .from('vendors')
         .select('id')
         .eq('user_id', user.id)
         .single();
 
-      const { data: admin } = await supabase
+      const { data: admin } = await dashboardClient
         .from('admin_users')
         .select('id')
         .eq('user_id', user.id)
@@ -155,7 +155,7 @@ export function useTestProductOfferMessages(offerId: string) {
         throw new Error('User is neither vendor nor admin');
       }
 
-      const { error: insertError } = await supabase
+      const { error: insertError } = await dashboardClient
         .from('test_product_offer_messages')
         .insert(messageData);
 
@@ -186,7 +186,7 @@ export function useTestProductOfferVendorApplications(offerId: string) {
       setLoading(true);
       setError(null);
 
-      const { data, error: fetchError } = await supabase
+      const { data, error: fetchError } = await dashboardClient
         .from('test_product_offer_vendors')
         .select(`
           *,

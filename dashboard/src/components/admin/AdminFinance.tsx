@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { DollarSign, TrendingUp, TrendingDown, Calendar, Download, CreditCard, MessageSquare } from 'lucide-react';
 import { useTransactions } from '../../hooks/useTransactions';
-import { supabase } from '../../lib/supabase';
+import { dashboardClient } from '../../lib/data-client';
 import { downloadCSV } from '../../lib/export';
 
 export function AdminFinance() {
@@ -48,7 +48,7 @@ export function AdminFinance() {
     if (!selectedVendor || !message.trim()) return;
 
     try {
-      await supabase.from('notifications').insert({
+      await dashboardClient.from('notifications').insert({
         vendor_id: selectedVendor.id,
         type: 'admin_message',
         title: 'Message from Admin',

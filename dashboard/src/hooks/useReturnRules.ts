@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 
 export interface ReturnRule {
   id: string;
@@ -21,7 +21,7 @@ export function useReturnRules() {
 
   const fetchRules = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('return_rules')
         .select('*')
         .order('display_order', { ascending: true });
@@ -41,10 +41,10 @@ export function useReturnRules() {
 
   const createRule = async (rule: Omit<ReturnRule, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await dashboardClient.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { data: admin } = await supabase
+      const { data: admin } = await dashboardClient
         .from('admin_users')
         .select('id')
         .eq('user_id', user.id)
@@ -52,7 +52,7 @@ export function useReturnRules() {
 
       if (!admin) throw new Error('Admin user not found');
 
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('return_rules')
         .insert({
           ...rule,
@@ -71,10 +71,10 @@ export function useReturnRules() {
 
   const updateRule = async (id: string, updates: Partial<ReturnRule>) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await dashboardClient.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { data: admin } = await supabase
+      const { data: admin } = await dashboardClient
         .from('admin_users')
         .select('id')
         .eq('user_id', user.id)
@@ -82,7 +82,7 @@ export function useReturnRules() {
 
       if (!admin) throw new Error('Admin user not found');
 
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('return_rules')
         .update({
           ...updates,
@@ -101,7 +101,7 @@ export function useReturnRules() {
 
   const deleteRule = async (id: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('return_rules')
         .delete()
         .eq('id', id);

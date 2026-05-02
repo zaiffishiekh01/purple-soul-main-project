@@ -19,7 +19,7 @@ import {
   AlertTriangle,
   FileText
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 
 interface VendorWarehouseSupportProps {
   vendorId: string;
@@ -107,7 +107,7 @@ export function VendorWarehouseSupportFixed({ vendorId }: VendorWarehouseSupport
   };
 
   const fetchRequests = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await dashboardClient
       .from('warehouse_requests')
       .select('*')
       .eq('vendor_id', vendorId)
@@ -117,7 +117,7 @@ export function VendorWarehouseSupportFixed({ vendorId }: VendorWarehouseSupport
   };
 
   const fetchInboundShipments = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await dashboardClient
       .from('warehouse_inbound_shipments')
       .select('*')
       .eq('vendor_id', vendorId)
@@ -127,7 +127,7 @@ export function VendorWarehouseSupportFixed({ vendorId }: VendorWarehouseSupport
   };
 
   const fetchWarehouseInventory = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await dashboardClient
       .from('warehouse_inventory')
       .select('*')
       .eq('vendor_id', vendorId)
@@ -137,7 +137,7 @@ export function VendorWarehouseSupportFixed({ vendorId }: VendorWarehouseSupport
   };
 
   const fetchMetrics = async () => {
-    const { data, error} = await supabase
+    const { data, error} = await dashboardClient
       .from('warehouse_performance_metrics')
       .select('*')
       .eq('vendor_id', vendorId)
@@ -156,7 +156,7 @@ export function VendorWarehouseSupportFixed({ vendorId }: VendorWarehouseSupport
       .map(c => c.trim())
       .filter(c => c.length > 0);
 
-    const { error } = await supabase
+    const { error } = await dashboardClient
       .from('warehouse_requests')
       .insert({
         vendor_id: vendorId,
@@ -196,7 +196,7 @@ export function VendorWarehouseSupportFixed({ vendorId }: VendorWarehouseSupport
   const handleSubmitASN = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const { error } = await supabase
+    const { error } = await dashboardClient
       .from('warehouse_inbound_shipments')
       .insert({
         vendor_id: vendorId,

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Save, X, AlertCircle, GripVertical } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { dashboardClient } from '../../lib/data-client';
 
 interface CategoryGroup {
   id: string;
@@ -30,7 +30,7 @@ export function AdminCategoryGroups() {
   const fetchGroups = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('category_groups')
         .select('*')
         .order('display_order', { ascending: true });
@@ -55,7 +55,7 @@ export function AdminCategoryGroups() {
     }
 
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('category_groups')
         .delete()
         .eq('id', id);
@@ -71,7 +71,7 @@ export function AdminCategoryGroups() {
 
   const handleToggleActive = async (id: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('category_groups')
         .update({ is_active: !currentStatus })
         .eq('id', id);
@@ -271,14 +271,14 @@ function CategoryGroupModal({ group, onClose, onSave }: CategoryGroupModalProps)
 
     try {
       if (group) {
-        const { error } = await supabase
+        const { error } = await dashboardClient
           .from('category_groups')
           .update(formData)
           .eq('id', group.id);
 
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        const { error } = await dashboardClient
           .from('category_groups')
           .insert([formData]);
 

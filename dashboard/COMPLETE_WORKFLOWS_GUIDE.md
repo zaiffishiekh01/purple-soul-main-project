@@ -73,7 +73,7 @@ WHERE id = [return_id];
 **Process**:
 1. Modal displays refund calculator
 2. Vendor sets refund method and amount
-3. System calls edge function `/functions/v1/process-refund`
+3. System calls edge function `/api/process-refund`
 4. Edge function:
    - Creates refund transaction in payment system
    - Updates return status to `completed` or `refunded`
@@ -227,13 +227,13 @@ WHERE id = [order_id];
    - Package type
 
 3. **Get Shipping Rates**:
-   - System calls `/functions/v1/calculate-shipping-rates`
+   - System calls `/api/calculate-shipping-rates`
    - Displays rates from multiple carriers
    - Shows delivery estimates
 
 4. **Select Rate and Generate Label**:
    - Choose shipping option
-   - System calls `/functions/v1/generate-shipping-label`
+   - System calls `/api/generate-shipping-label`
    - Generates printable label
    - Creates shipment record with tracking number
 
@@ -516,7 +516,7 @@ WHERE id = [ticket_id];
 2. Verify vendor_id matches logged-in vendor
 3. Check return status is valid for action
 4. Review browser console for API errors
-5. Verify edge function `/functions/v1/process-refund` is deployed
+5. Verify edge function `/api/process-refund` is deployed
 
 ### Orders Not Showing
 1. Verify vendor profile is complete
@@ -563,16 +563,16 @@ WHERE id = [ticket_id];
 ## EDGE FUNCTIONS REFERENCE
 
 ### Available Functions
-1. `/functions/v1/calculate-shipping-rates` - Get carrier rates
-2. `/functions/v1/generate-shipping-label` - Create label
-3. `/functions/v1/process-refund` - Process returns refund
-4. `/functions/v1/generate-invoice-pdf` - Create order invoice
-5. `/functions/v1/create-payment-intent` - Process payments
-6. `/functions/v1/send-email` - Send notifications
+1. `/api/calculate-shipping-rates` - Get carrier rates
+2. `/api/generate-shipping-label` - Create label
+3. `/api/process-refund` - Process returns refund
+4. `/api/generate-invoice-pdf` - Create order invoice
+5. `/api/create-payment-intent` - Process payments
+6. `/api/send-email` - Send notifications
 
 ### Usage Pattern
 ```typescript
-const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/[function-name]`;
+const apiUrl = `${import.meta.env.NEXTAUTH_URL}/api/[function-name]`;
 
 const response = await fetch(apiUrl, {
   method: 'POST',

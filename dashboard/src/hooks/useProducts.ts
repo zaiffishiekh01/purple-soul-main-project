@@ -1,59 +1,47 @@
-import { useState, useEffect, useCallback, useContext, useMemo } from 'react';
-import { supabase } from '../lib/supabase';
+import { useCallback, useContext, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { dashboardClient } from '../lib/data-client';
+import { dashboardKeys } from '../lib/dashboard-query-keys';
 import { Product } from '../types';
 import { VendorContext } from '../contexts/VendorContext';
 import { useAuth } from '../contexts/AuthContext';
 
+async function fetchProductsList(opts: { isAdmin: boolean; vendorId: string | null }) {
+  let query = dashboardClient.from('products').select('*');
+  if (!opts.isAdmin && opts.vendorId) {
+    query = query.eq('vendor_id', opts.vendorId);
+  }
+  query = query.order('created_at', { ascending: false });
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data || []) as Product[];
+}
+
 export function useProducts() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
   const vendorContext = useContext(VendorContext);
   const vendor = vendorContext?.vendor ?? null;
   const vendorLoading = vendorContext?.loading ?? false;
   const { isAdmin } = useAuth();
+  const vendorId = vendor?.id ?? null;
+  const queryClient = useQueryClient();
 
-  const vendorId = vendor?.id;
+  const query = useQuery({
+    queryKey: dashboardKeys.products({ isAdmin, vendorId }),
+    queryFn: () => fetchProductsList({ isAdmin, vendorId }),
+    enabled: !vendorLoading && (isAdmin || !!vendorId),
+  });
 
-  useEffect(() => {
-    if (vendorLoading) {
-      return;
-    }
+  const products = (query.data ?? []) as Product[];
 
-    const fetchProducts = async () => {
-      try {
-        let query = supabase
-          .from('products')
-          .select('*');
+  const invalidateProducts = useCallback(() => {
+    return queryClient.invalidateQueries({ queryKey: dashboardKeys.productsPrefix });
+  }, [queryClient]);
 
-        if (!isAdmin && vendorId) {
-          query = query.eq('vendor_id', vendorId);
-        }
+  const addProduct = useCallback(
+    async (product: Omit<Product, 'id' | 'created_at' | 'updated_at'>) => {
+      if (!vendorId) return;
 
-        query = query.order('created_at', { ascending: false });
-
-        const { data, error } = await query;
-
-        if (error) throw error;
-        setProducts(data || []);
-      } catch (error) {
-        console.error('Error fetching products:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (vendorId || isAdmin) {
-      fetchProducts();
-    } else {
-      setLoading(false);
-    }
-  }, [vendorId, vendorLoading, isAdmin]);
-
-  const addProduct = useCallback(async (product: Omit<Product, 'id' | 'created_at' | 'updated_at'>) => {
-    if (!vendorId) return;
-
-    try {
-      const { data: vendorData } = await supabase
+      const { data: vendorData } = await dashboardClient
         .from('vendors')
         .select('auto_approve_products')
         .eq('id', vendorId)
@@ -69,24 +57,22 @@ export function useProducts() {
         approved_at: autoApprove ? new Date().toISOString() : null,
       };
 
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('products')
         .insert(productToInsert)
         .select()
         .single();
 
       if (error) throw error;
-      setProducts(prev => [data, ...prev]);
+      await invalidateProducts();
       return data;
-    } catch (error) {
-      console.error('Error adding product:', error);
-      throw error;
-    }
-  }, [vendorId]);
+    },
+    [vendorId, invalidateProducts]
+  );
 
-  const updateProduct = useCallback(async (id: string, updates: Partial<Product>) => {
-    try {
-      const { data, error } = await supabase
+  const updateProduct = useCallback(
+    async (id: string, updates: Partial<Product>) => {
+      const { data, error } = await dashboardClient
         .from('products')
         .update(updates)
         .eq('id', id)
@@ -94,53 +80,36 @@ export function useProducts() {
         .single();
 
       if (error) throw error;
-      setProducts(prev => prev.map((p) => (p.id === id ? data : p)));
+      await invalidateProducts();
       return data;
-    } catch (error) {
-      console.error('Error updating product:', error);
-      throw error;
-    }
-  }, []);
+    },
+    [invalidateProducts]
+  );
 
-  const deleteProduct = useCallback(async (id: string) => {
-    try {
-      const { error } = await supabase.from('products').delete().eq('id', id);
-
+  const deleteProduct = useCallback(
+    async (id: string) => {
+      const { error } = await dashboardClient.from('products').delete().eq('id', id);
       if (error) throw error;
-      setProducts(prev => prev.filter((p) => p.id !== id));
-    } catch (error) {
-      console.error('Error deleting product:', error);
-      throw error;
-    }
-  }, []);
+      await invalidateProducts();
+    },
+    [invalidateProducts]
+  );
 
   const refetch = useCallback(async () => {
-    try {
-      let query = supabase
-        .from('products')
-        .select('*');
+    await query.refetch();
+  }, [query]);
 
-      if (!isAdmin && vendorId) {
-        query = query.eq('vendor_id', vendorId);
-      }
+  const loading = vendorLoading || query.isPending || query.isRefetching;
 
-      query = query.order('created_at', { ascending: false });
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      setProducts(data || []);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-    }
-  }, [vendorId, isAdmin]);
-
-  return useMemo(() => ({
-    products,
-    loading,
-    addProduct,
-    updateProduct,
-    deleteProduct,
-    refetch
-  }), [products, loading, addProduct, updateProduct, deleteProduct, refetch]);
+  return useMemo(
+    () => ({
+      products,
+      loading,
+      addProduct,
+      updateProduct,
+      deleteProduct,
+      refetch,
+    }),
+    [products, loading, addProduct, updateProduct, deleteProduct, refetch]
+  );
 }

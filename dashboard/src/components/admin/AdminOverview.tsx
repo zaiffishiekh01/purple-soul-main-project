@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Users, ShoppingCart, Package, DollarSign, TrendingUp, TrendingDown, AlertTriangle, Clock, RotateCcw, XCircle, CheckCircle, Truck, FileText, AlertCircle, Globe } from 'lucide-react';
 import { useAdminVendors } from '../../hooks/useAdminVendors';
 import { useOrders } from '../../hooks/useOrders';
 import { useProducts } from '../../hooks/useProducts';
 import { useTransactions } from '../../hooks/useTransactions';
-import { supabase } from '../../lib/supabase';
+import { dashboardClient } from '../../lib/data-client';
 
 interface FeeWaiverRequest {
   id: string;
@@ -39,74 +39,109 @@ export function AdminOverview() {
   }, []);
 
   const fetchAdditionalData = async () => {
-    const { data: feeWaiversData } = await supabase
-      .from('fee_waiver_requests')
-      .select('*');
+    const [feeRes, returnsRes, shipmentsRes] = await Promise.all([
+      dashboardClient.from('fee_waiver_requests').select('*'),
+      dashboardClient.from('returns').select('*'),
+      dashboardClient.from('shipments').select('*'),
+    ]);
 
-    const { data: returnsData } = await supabase
-      .from('returns')
-      .select('*');
-
-    const { data: shipmentsData } = await supabase
-      .from('shipments')
-      .select('*');
-
-    setFeeWaivers(feeWaiversData || []);
-    setReturns(returnsData || []);
-    setShipments(shipmentsData || []);
+    setFeeWaivers(feeRes.data || []);
+    setReturns(returnsRes.data || []);
+    setShipments(shipmentsRes.data || []);
   };
 
-  const now = new Date();
-  const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-  const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const {
+    stats,
+    qualityStats,
+    workQueues,
+    regionStats,
+    recentVendors,
+    highReturnVendors,
+    vendorHealthRows,
+  } = useMemo(() => {
+    const now = new Date();
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const vendorsLastMonth = vendors.filter(v => new Date(v.created_at) < lastMonth).length;
-  const vendorsThisMonth = vendors.filter(v => new Date(v.created_at) >= thisMonth).length;
-  const vendorGrowth = vendorsLastMonth > 0 ? ((vendors.length - vendorsLastMonth) / vendorsLastMonth * 100).toFixed(0) : 0;
+    const vendorsLastMonth = vendors.filter((v) => new Date(v.created_at) < lastMonth).length;
+    const vendorsThisMonth = vendors.filter((v) => new Date(v.created_at) >= thisMonth).length;
+    const vendorGrowth =
+      vendorsLastMonth > 0 ? (((vendors.length - vendorsLastMonth) / vendorsLastMonth) * 100).toFixed(0) : 0;
 
-  const activeVendors = vendors.filter(v => {
-    const hasOrders = orders.some(o => o.vendor_id === v.id);
-    return v.status === 'active' && hasOrders;
-  });
-  const activePercentage = vendors.length > 0 ? ((activeVendors.length / vendors.length) * 100).toFixed(0) : 0;
+    const vendorIdsWithOrders = new Set(orders.map((o) => o.vendor_id));
+    const activeVendors = vendors.filter(
+      (v) => v.status === 'active' && vendorIdsWithOrders.has(v.id)
+    );
+    const activePercentage =
+      vendors.length > 0 ? ((activeVendors.length / vendors.length) * 100).toFixed(0) : 0;
 
-  const pendingVendorApprovals = vendors.filter(v => v.status === 'pending').length;
-  const pendingProductApprovals = products.filter(p => p.status === 'pending').length;
+    const pendingVendorApprovals = vendors.filter((v) => v.status === 'pending').length;
+    const pendingProductApprovals = products.filter((p) => p.status === 'pending').length;
 
-  const totalRevenue = transactions
-    .filter(t => t.type === 'commission')
-    .reduce((sum, t) => sum + (t.amount || 0), 0);
+    const totalRevenue = transactions
+      .filter((t) => t.type === 'commission')
+      .reduce((sum, t) => sum + (t.amount || 0), 0);
 
-  const gmv = orders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
-  const commissionMargin = gmv > 0 ? ((Math.abs(totalRevenue) / gmv) * 100).toFixed(0) : 0;
+    const gmv = orders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+    const commissionMargin = gmv > 0 ? ((Math.abs(totalRevenue) / gmv) * 100).toFixed(0) : 0;
 
-  const ordersThisMonth = orders.filter(o => new Date(o.created_at) >= thisMonth).length;
-  const returnsCount = returns.length;
-  const returnRate = ordersThisMonth > 0 ? ((returnsCount / ordersThisMonth) * 100).toFixed(1) : 0;
+    const ordersThisMonth = orders.filter((o) => new Date(o.created_at) >= thisMonth).length;
+    const returnsCount = returns.length;
+    const returnRate = ordersThisMonth > 0 ? ((returnsCount / ordersThisMonth) * 100).toFixed(1) : 0;
 
-  const cancelledOrders = orders.filter(o => o.status === 'cancelled').length;
-  const cancellationRate = ordersThisMonth > 0 ? ((cancelledOrders / ordersThisMonth) * 100).toFixed(1) : 0;
+    const cancelledOrders = orders.filter((o) => o.status === 'cancelled').length;
+    const cancellationRate =
+      ordersThisMonth > 0 ? ((cancelledOrders / ordersThisMonth) * 100).toFixed(1) : 0;
 
-  const onTimeShipments = shipments.filter(s => {
-    if (s.status !== 'delivered' || !s.shipped_at || !s.estimated_delivery) return false;
-    return new Date(s.shipped_at) <= new Date(s.estimated_delivery);
-  }).length;
-  const onTimeRate = shipments.length > 0 ? ((onTimeShipments / shipments.length) * 100).toFixed(0) : 0;
+    const onTimeShipments = shipments.filter((s) => {
+      if (s.status !== 'delivered' || !s.shipped_at || !s.estimated_delivery) return false;
+      return new Date(s.shipped_at) <= new Date(s.estimated_delivery);
+    }).length;
+    const onTimeRate =
+      shipments.length > 0 ? ((onTimeShipments / shipments.length) * 100).toFixed(0) : 0;
 
-  const pendingFeeWaivers = feeWaivers.filter(f => f.status === 'pending').length;
-  const stuckOrders = orders.filter(o =>
-    o.status === 'pending' &&
-    (now.getTime() - new Date(o.created_at).getTime()) > (7 * 24 * 60 * 60 * 1000)
-  ).length;
+    const pendingFeeWaivers = feeWaivers.filter((f) => f.status === 'pending').length;
+    const stuckOrders = orders.filter(
+      (o) =>
+        o.status === 'pending' &&
+        now.getTime() - new Date(o.created_at).getTime() > 7 * 24 * 60 * 60 * 1000
+    ).length;
 
-  const highReturnVendors = vendors.filter(v => {
-    const vendorOrders = orders.filter(o => o.vendor_id === v.id);
-    const vendorReturns = returns.filter(r => vendorOrders.some(o => o.id === r.order_id));
-    const returnRate = vendorOrders.length > 0 ? (vendorReturns.length / vendorOrders.length) : 0;
-    return returnRate > 0.15;
-  });
+    const orderIdToVendor = new Map(orders.map((o) => [o.id, o.vendor_id] as const));
+    const ordersPerVendor = new Map<string, number>();
+    for (const o of orders) {
+      ordersPerVendor.set(o.vendor_id, (ordersPerVendor.get(o.vendor_id) ?? 0) + 1);
+    }
+    const returnsPerVendor = new Map<string, number>();
+    for (const r of returns) {
+      const vid = orderIdToVendor.get(r.order_id);
+      if (!vid) continue;
+      returnsPerVendor.set(vid, (returnsPerVendor.get(vid) ?? 0) + 1);
+    }
+    const highReturnVendorsList = vendors.filter((v) => {
+      const oc = ordersPerVendor.get(v.id) ?? 0;
+      const rc = returnsPerVendor.get(v.id) ?? 0;
+      return oc > 0 && rc / oc > 0.15;
+    });
 
-  const stats = [
+    let activeCount = 0;
+    let pendingCount = 0;
+    let suspendedCount = 0;
+    let inactiveCount = 0;
+    for (const v of vendors) {
+      if (v.status === 'active') activeCount++;
+      else if (v.status === 'pending') pendingCount++;
+      else if (v.status === 'suspended') suspendedCount++;
+      else if (v.status === 'inactive') inactiveCount++;
+    }
+    const vendorHealthRowsLocal = [
+      { status: 'Active', count: activeCount, color: 'bg-green-500' },
+      { status: 'Pending', count: pendingCount, color: 'bg-yellow-500' },
+      { status: 'Suspended', count: suspendedCount, color: 'bg-red-500' },
+      { status: 'Inactive', count: inactiveCount, color: 'bg-gray-500' },
+    ];
+
+    const statsLocal = [
     {
       title: 'Total Vendors',
       value: vendors.length,
@@ -145,7 +180,7 @@ export function AdminOverview() {
     },
   ];
 
-  const qualityStats = [
+  const qualityStatsLocal = [
     {
       title: 'Total Orders',
       value: ordersThisMonth,
@@ -176,7 +211,7 @@ export function AdminOverview() {
     },
   ];
 
-  const workQueues = [
+  const workQueuesLocal = [
     {
       title: 'Product Approvals',
       count: pendingProductApprovals,
@@ -207,14 +242,25 @@ export function AdminOverview() {
     },
   ];
 
-  const regionStats = [
+  const regionStatsLocal = [
     { region: 'North America', gmv: gmv * 0.45, orders: Math.floor(ordersThisMonth * 0.45), aov: (gmv * 0.45) / Math.max(1, Math.floor(ordersThisMonth * 0.45)), returnRate: 4.2 },
     { region: 'Europe', gmv: gmv * 0.30, orders: Math.floor(ordersThisMonth * 0.30), aov: (gmv * 0.30) / Math.max(1, Math.floor(ordersThisMonth * 0.30)), returnRate: 5.8 },
     { region: 'Middle East', gmv: gmv * 0.20, orders: Math.floor(ordersThisMonth * 0.20), aov: (gmv * 0.20) / Math.max(1, Math.floor(ordersThisMonth * 0.20)), returnRate: 3.1 },
     { region: 'Others', gmv: gmv * 0.05, orders: Math.floor(ordersThisMonth * 0.05), aov: (gmv * 0.05) / Math.max(1, Math.floor(ordersThisMonth * 0.05)), returnRate: 6.5 },
   ];
 
-  const recentVendors = vendors.slice(0, 5);
+  const recentVendorsLocal = vendors.slice(0, 5);
+
+    return {
+      stats: statsLocal,
+      qualityStats: qualityStatsLocal,
+      workQueues: workQueuesLocal,
+      regionStats: regionStatsLocal,
+      recentVendors: recentVendorsLocal,
+      highReturnVendors: highReturnVendorsList,
+      vendorHealthRows: vendorHealthRowsLocal,
+    };
+  }, [vendors, orders, products, transactions, feeWaivers, returns, shipments]);
 
   return (
     <div className="space-y-6">
@@ -358,12 +404,7 @@ export function AdminOverview() {
           <h2 className="text-lg font-bold text-gray-900 mb-4">Vendor Health</h2>
 
           <div className="space-y-4 mb-6">
-            {[
-              { status: 'Active', count: vendors.filter(v => v.status === 'active').length, color: 'bg-green-500' },
-              { status: 'Pending', count: vendors.filter(v => v.status === 'pending').length, color: 'bg-yellow-500' },
-              { status: 'Suspended', count: vendors.filter(v => v.status === 'suspended').length, color: 'bg-red-500' },
-              { status: 'Inactive', count: vendors.filter(v => v.status === 'inactive').length, color: 'bg-gray-500' },
-            ].map((item) => {
+            {vendorHealthRows.map((item) => {
               const percentage = vendors.length > 0 ? (item.count / vendors.length) * 100 : 0;
               return (
                 <div key={item.status}>

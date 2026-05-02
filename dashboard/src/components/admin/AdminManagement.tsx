@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Shield, Plus, Edit, Trash2, X, UserPlus, CheckCircle, XCircle, Crown, UserCog, BarChart3, Inbox, Clock, Check, Ban } from 'lucide-react';
 import { useAdminManagement, AdminPermissions } from '../../hooks/useAdminPermissions';
 import { useToast } from '../../components/Toast';
-import { supabase } from '../../lib/supabase';
+import { dashboardClient } from '../../lib/data-client';
 
 interface AccessRequest {
   id: string;
@@ -21,7 +21,7 @@ function useAccessRequests() {
   const fetchRequests = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('admin_access_requests')
         .select('*')
         .order('created_at', { ascending: false });
@@ -34,7 +34,7 @@ function useAccessRequests() {
   useEffect(() => { fetchRequests(); }, []);
 
   const updateRequest = async (id: string, status: 'approved' | 'rejected', notes?: string) => {
-    const { error } = await supabase
+    const { error } = await dashboardClient
       .from('admin_access_requests')
       .update({ status, notes: notes || '', reviewed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
       .eq('id', id);

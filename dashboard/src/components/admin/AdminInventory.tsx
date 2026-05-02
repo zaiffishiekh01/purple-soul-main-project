@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Package, AlertTriangle, TrendingDown, Search, Filter, Download, RefreshCw } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { dashboardClient } from '../../lib/data-client';
+import { loadAdminInventoryWithRelations } from '../../lib/dashboard-relational-loaders';
+import { AdminInventoryTableRow } from './AdminInventoryTableRow';
+import { getStockStatus } from './inventoryDisplay';
 
 interface InventoryItem {
   id: string;
@@ -44,59 +47,27 @@ export function AdminInventory() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [inventoryRes, vendorsRes] = await Promise.all([
-        supabase
-          .from('inventory')
-          .select(`
-            *,
-            vendors (
-              business_name,
-              contact_email
-            ),
-            products (
-              name,
-              sku,
-              category,
-              price
-            )
-          `)
-          .order('quantity', { ascending: true }),
-        supabase
+      const [inventoryRows, vendorsRes] = await Promise.all([
+        loadAdminInventoryWithRelations(),
+        dashboardClient
           .from('vendors')
           .select('id, business_name')
           .eq('status', 'active')
-          .order('business_name')
+          .order('business_name'),
       ]);
 
-      if (inventoryRes.data) {
-        const formattedData = inventoryRes.data.map(item => ({
-          ...item,
-          product_name: item.products?.name || 'Unknown Product',
-          sku: item.products?.sku || 'N/A'
-        }));
-        setInventory(formattedData);
-      }
-      if (vendorsRes.data) setVendors(vendorsRes.data);
+      const formattedData = inventoryRows.map((item) => ({
+        ...item,
+        product_name: item.products?.name || 'Unknown Product',
+        sku: item.products?.sku || 'N/A',
+      }));
+      setInventory(formattedData as InventoryItem[]);
+      if (vendorsRes.data) setVendors(vendorsRes.data as Vendor[]);
     } catch (error) {
       console.error('Error fetching inventory:', error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const getStockStatus = (quantity: number, threshold: number) => {
-    if (quantity === 0) return 'out_of_stock';
-    if (quantity <= threshold) return 'low_stock';
-    return 'in_stock';
-  };
-
-  const getStockStatusConfig = (status: string) => {
-    const configs = {
-      in_stock: { label: 'In Stock', color: 'bg-green-100 text-green-700 border-green-200' },
-      low_stock: { label: 'Low Stock', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
-      out_of_stock: { label: 'Out of Stock', color: 'bg-red-100 text-red-700 border-red-200' },
-    };
-    return configs[status as keyof typeof configs] || configs.in_stock;
   };
 
   const filteredInventory = inventory.filter(item => {
@@ -351,55 +322,9 @@ export function AdminInventory() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredInventory.map((item) => {
-                const status = getStockStatus(item.quantity, item.low_stock_threshold);
-                const statusConfig = getStockStatusConfig(status);
-                const available = item.quantity - item.reserved_quantity;
-
-                return (
-                  <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-gray-900">{item.vendors?.business_name}</div>
-                      <div className="text-xs text-gray-500">{item.vendors?.contact_email}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-gray-900">{item.product_name}</div>
-                      {item.products?.category && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          <span className="px-2 py-0.5 bg-gray-100 rounded-full">{item.products.category}</span>
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">
-                      {item.sku}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="font-semibold text-gray-900">{item.quantity}</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-purple-600 font-medium">{item.reserved_quantity}</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`font-semibold ${available > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {available}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {item.warehouse_location || 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${statusConfig.color}`}>
-                        {statusConfig.label}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {item.last_restocked_at
-                        ? new Date(item.last_restocked_at).toLocaleDateString()
-                        : 'Never'}
-                    </td>
-                  </tr>
-                );
-              })}
+              {filteredInventory.map((item) => (
+                <AdminInventoryTableRow key={item.id} item={item} />
+              ))}
             </tbody>
           </table>
         </div>

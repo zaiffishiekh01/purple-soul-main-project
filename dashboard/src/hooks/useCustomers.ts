@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 import { Customer } from '../types';
 
 export function useCustomers() {
@@ -13,7 +13,7 @@ export function useCustomers() {
   const fetchCustomers = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('customers')
         .select('*')
         .order('created_at', { ascending: false });

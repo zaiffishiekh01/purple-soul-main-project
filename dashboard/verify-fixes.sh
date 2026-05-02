@@ -43,21 +43,24 @@ else
 fi
 
 echo ""
-echo "5. Checking routes..."
-if grep -q "<Route path=\"/vendor/\*\"" src/App.tsx; then
-  echo "  ✅ Vendor routes defined"
+echo "5. Checking Next.js route modules..."
+if grep -q "VendorRoutes" src/next-routes/vendor-routes.tsx; then
+  echo "  ✅ vendor-routes.tsx present"
+else
+  echo "  ❌ vendor-routes.tsx missing"
 fi
-if grep -q "<Route path=\"/admin/\*\"" src/App.tsx; then
-  echo "  ✅ Admin routes defined"
+if grep -q "AdminRoutes" src/next-routes/admin-routes.tsx; then
+  echo "  ✅ admin-routes.tsx present"
+else
+  echo "  ❌ admin-routes.tsx missing"
 fi
 
 echo ""
 echo "=== BUILD STATUS ==="
-if [ -f dist/index.html ]; then
-  echo "  ✅ Build successful"
-  echo "  Size: $(du -h dist/assets/*.js | tail -1 | awk '{print $1}')"
+if [ -d .next ]; then
+  echo "  ✅ Next.js build output (.next) present"
 else
-  echo "  ❌ Build failed"
+  echo "  ⚠️  .next missing (run: npm run build)"
 fi
 
 echo ""

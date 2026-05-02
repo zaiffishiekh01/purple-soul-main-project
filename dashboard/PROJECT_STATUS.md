@@ -113,7 +113,7 @@ project/
 │   │   ├── useNotifications.ts
 │   │   └── ... (9 more)
 │   ├── lib/                 # Utility libraries
-│   │   ├── supabase.ts
+│   │   ├── data-client.ts
 │   │   ├── storage.ts
 │   │   ├── export.ts
 │   │   ├── search.ts
@@ -125,8 +125,8 @@ project/
 │   │   └── AuthContext.tsx
 │   └── types/
 │       └── index.ts
-├── supabase/
-│   └── migrations/          # 22+ migration files
+├── postgres/
+│   └── migrations/          # SQL migrations (timestamped .sql files)
 └── Documentation:
     ├── INTEGRATIONS.md      # API integration guide
     ├── PROJECT_STATUS.md    # This file
@@ -440,7 +440,7 @@ console.log(`Updated: ${result.success}, Failed: ${result.failed}`);
 - **Integration Guide**: See `INTEGRATIONS.md`
 - **Security Guide**: See `SECURITY.md`
 - **API Documentation**: See deployed Edge Functions
-- **Database Schema**: See `supabase/migrations/`
+- **Database Schema**: See `postgres/migrations/`
 
 ---
 

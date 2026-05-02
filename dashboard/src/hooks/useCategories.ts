@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 
 export interface Category {
   id: string;
@@ -28,7 +28,7 @@ export function useCategories(activeOnly = true) {
       setLoading(true);
       setError(null);
 
-      let query = supabase
+      let query = dashboardClient
         .from('categories')
         .select('*')
         .order('display_order', { ascending: true });

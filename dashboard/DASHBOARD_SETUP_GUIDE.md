@@ -8,19 +8,22 @@ cd dashboard
 npm run dev
 ```
 
-The server should start on `http://localhost:5173` (or another port if 5173 is busy).
+The server should start on `http://localhost:3000` (Next.js default).
 
-### 2. Test Supabase Connection
-Open `dashboard/test-supabase-connection.html` in your browser to verify:
-- ✓ Supabase credentials are correct
-- ✓ Database tables exist
-- ✓ Authentication works
-- ✓ Vendor creation works
+### 2. Smoke-test public APIs (optional)
+
+With the dev server running:
+
+```bash
+npm run smoke:api
+```
+
+Or open `http://localhost:3000/api/health` in a browser. There is no bundled Supabase test page; use Postgres + `DATABASE_URL` and migrations (`npm run db:apply-migrations`) for schema.
 
 ### 3. Test the Full Flow
 
 #### Sign Up Flow:
-1. Go to `http://localhost:5173/`
+1. Go to `http://localhost:3000/`
 2. Click "Vendor" role
 3. Click "Sign Up"
 4. Enter email and password (min 6 characters)
@@ -33,7 +36,7 @@ Open `dashboard/test-supabase-connection.html` in your browser to verify:
 4. ⏳ Wait for admin approval before accessing dashboard
 
 #### Sign In Flow (Existing User):
-1. Go to `http://localhost:5173/login/vendor`
+1. Go to `http://localhost:3000/login/vendor`
 2. Enter credentials
 3. **If approved**: See dashboard
 4. **If pending**: See pending approval screen
@@ -51,25 +54,21 @@ Look for:
 
 ### Common Issues & Fixes:
 
-#### Issue 1: "Missing Supabase environment variables"
-**Fix**: Ensure `.env` file exists with:
-```env
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
-```
+#### Issue 1: "Missing environment variables"
+**Fix**: Ensure `.env` file exists with at least `DATABASE_URL`, `AUTH_SECRET`, and `NEXTAUTH_URL` (see `.env.example`).
 
 #### Issue 2: RLS Policy Blocking
 **Symptoms**: Error 401 or 403 in console
-**Fix**: 
-1. Check Supabase dashboard → Authentication → Policies
-2. Ensure vendors table has INSERT policy for authenticated users
-3. Run migration: `20260409000000_fix_vendor_schema.sql`
+**Fix**:
+1. Inspect Postgres RLS policies for the failing table (see migrations under `postgres/migrations/`).
+2. Ensure the signed-in user / API path you use is allowed to SELECT/INSERT as intended.
+3. Apply any missing migration (e.g. vendor schema fixes) with `npm run db:apply-migrations`.
 
 #### Issue 3: Database Tables Missing
-**Fix**: Run all migrations in `supabase/migrations/` folder
+**Fix**: Run all migrations in `postgres/migrations/` (local Postgres):
 ```bash
-# Using Supabase CLI
-supabase db push
+cd dashboard
+npm run db:apply-migrations
 ```
 
 #### Issue 4: Infinite Loading Loop
@@ -114,7 +113,7 @@ To approve a vendor:
 3. Find pending vendor
 4. Click "Approve"
 
-Or directly in Supabase SQL Editor:
+Or directly in psql / your SQL client:
 ```sql
 -- Find your user ID first
 SELECT id FROM auth.users WHERE email = 'your-email@example.com';
@@ -150,7 +149,7 @@ WHERE user_id = 'YOUR-USER-ID-HERE';
    - Debug logging for vendor state
    - Better UX during loading
 
-3. **`dashboard/supabase/migrations/20260409000000_fix_vendor_schema.sql`**
+3. **`dashboard/postgres/migrations/20260409000000_fix_vendor_schema.sql`** (if present in your migration set)
    - Adds missing columns
    - Ensures proper defaults
    - Updates status for pending vendors

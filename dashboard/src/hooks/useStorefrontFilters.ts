@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 
 export interface StorefrontFacetGroup {
   id: string;
@@ -37,7 +37,7 @@ export function useStorefrontFilters(categoryId?: string | null) {
       let facetGroupIds: string[] = [];
 
       if (categoryId) {
-        const { data: mappings, error: mappingsError } = await supabase
+        const { data: mappings, error: mappingsError } = await dashboardClient
           .from('category_facets')
           .select('facet_group_id')
           .eq('category_id', categoryId);
@@ -47,7 +47,7 @@ export function useStorefrontFilters(categoryId?: string | null) {
         facetGroupIds = (mappings || []).map(m => m.facet_group_id);
       }
 
-      let groupsQuery = supabase
+      let groupsQuery = dashboardClient
         .from('facet_groups')
         .select('*')
         .eq('is_active', true)
@@ -68,7 +68,7 @@ export function useStorefrontFilters(categoryId?: string | null) {
 
       const groupIds = groups.map(g => g.id);
 
-      const { data: values, error: valuesError } = await supabase
+      const { data: values, error: valuesError } = await dashboardClient
         .from('facet_values')
         .select('*')
         .in('facet_group_id', groupIds)
@@ -99,7 +99,7 @@ export async function getProductsByFilters(
   limit: number = 50,
   offset: number = 0
 ) {
-  let query = supabase
+  let query = dashboardClient
     .from('products')
     .select(`
       *,

@@ -138,33 +138,33 @@ This checklist confirms that the catalog governance system meets all requirement
 ## Public APIs - External Consumers
 
 ### ✅ Navigation API
-- [x] Endpoint: GET /get-catalog-navigation
-- [x] Deployed to Supabase Edge Functions
+- [x] Endpoint: GET `/api/catalog/navigation`
+- [x] Served by Next.js Route Handler
 - [x] Status: ACTIVE
 - [x] JWT Required: No (public access)
 - [x] CORS: Enabled
 - [x] Returns: Navigation tree, featured categories, static links
-- [x] File: `supabase/functions/get-catalog-navigation/index.ts`
+- [x] File: `app/api/catalog/navigation/route.ts`
 
 ### ✅ Taxonomy API
-- [x] Endpoint: GET /get-catalog-taxonomy
-- [x] Deployed to Supabase Edge Functions
+- [x] Endpoint: GET `/api/catalog/taxonomy`
+- [x] Served by Next.js Route Handler
 - [x] Status: ACTIVE
 - [x] JWT Required: No (public access)
 - [x] CORS: Enabled
 - [x] Returns: Category tree, leaf categories, flat list
 - [x] Query params: flat, include_inactive, category_id
-- [x] File: `supabase/functions/get-catalog-taxonomy/index.ts`
+- [x] File: `app/api/catalog/taxonomy/route.ts`
 
 ### ✅ Facets API
-- [x] Endpoint: GET /get-catalog-facets
-- [x] Deployed to Supabase Edge Functions
+- [x] Endpoint: GET `/api/catalog/facets`
+- [x] Served by Next.js Route Handler
 - [x] Status: ACTIVE
 - [x] JWT Required: No (public access)
 - [x] CORS: Enabled
 - [x] Returns: Facet groups, values, category mappings
 - [x] Query params: category_id, facet_group_id, include_inactive
-- [x] File: `supabase/functions/get-catalog-facets/index.ts`
+- [x] File: `app/api/catalog/facets/route.ts`
 
 ### ✅ API Security
 - [x] Read-only (GET methods only)

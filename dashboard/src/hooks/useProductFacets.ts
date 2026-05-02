@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 
 export interface FacetGroup {
   id: string;
@@ -39,7 +39,7 @@ export function useProductFacets(categoryId: string | null) {
       setLoading(true);
       setError(null);
 
-      const { data: mappings, error: mappingsError } = await supabase
+      const { data: mappings, error: mappingsError } = await dashboardClient
         .from('category_facets')
         .select(`
           facet_group_id,
@@ -64,7 +64,7 @@ export function useProductFacets(categoryId: string | null) {
       if (activeGroups.length > 0) {
         const groupIds = activeGroups.map(g => g.id);
 
-        const { data: values, error: valuesError } = await supabase
+        const { data: values, error: valuesError } = await dashboardClient
           .from('facet_values')
           .select('*')
           .in('facet_group_id', groupIds)
@@ -96,7 +96,7 @@ export function useProductFacets(categoryId: string | null) {
 }
 
 export async function getProductFacets(productId: string) {
-  const { data, error } = await supabase
+  const { data, error } = await dashboardClient
     .from('product_facets')
     .select('facet_value_id')
     .eq('product_id', productId);
@@ -107,7 +107,7 @@ export async function getProductFacets(productId: string) {
 }
 
 export async function saveProductFacets(productId: string, facetValueIds: string[]) {
-  await supabase
+  await dashboardClient
     .from('product_facets')
     .delete()
     .eq('product_id', productId);
@@ -118,7 +118,7 @@ export async function saveProductFacets(productId: string, facetValueIds: string
       facet_value_id: fvId
     }));
 
-    const { error } = await supabase
+    const { error } = await dashboardClient
       .from('product_facets')
       .insert(records);
 

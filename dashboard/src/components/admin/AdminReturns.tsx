@@ -1,6 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { RotateCcw, Search, CheckCircle, XCircle, DollarSign, Package } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { dashboardClient } from '../../lib/data-client';
+import { loadReturnsWithVendorAndOrders } from '../../lib/dashboard-relational-loaders';
+import { dashboardKeys } from '../../lib/dashboard-query-keys';
 
 interface Return {
   id: string;
@@ -28,64 +31,46 @@ interface Return {
 }
 
 export default function AdminReturns() {
-  const [returns, setReturns] = useState<Return[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedReturn, setSelectedReturn] = useState<Return | null>(null);
 
-  useEffect(() => {
-    fetchReturns();
-  }, [statusFilter]);
+  const returnsQuery = useQuery({
+    queryKey: dashboardKeys.adminReturns(statusFilter),
+    queryFn: async () => {
+      const data = await loadReturnsWithVendorAndOrders({
+        statusEq: statusFilter,
+      });
+      return (data || []) as Return[];
+    },
+  });
 
-  const fetchReturns = async () => {
-    try {
-      setLoading(true);
-      let query = supabase
-        .from('returns')
-        .select(`
-          *,
-          vendors (business_name),
-          orders (order_number)
-        `)
-        .order('requested_at', { ascending: false });
+  const returns = returnsQuery.data ?? [];
+  const loading = returnsQuery.isPending || returnsQuery.isRefetching;
 
-      if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
+  const updateReturnStatus = useCallback(
+    async (returnId: string, newStatus: string) => {
+      try {
+        const updates: Record<string, unknown> = { status: newStatus };
+
+        if (newStatus === 'approved') {
+          updates.approved_at = new Date().toISOString();
+        } else if (newStatus === 'processed') {
+          updates.processed_at = new Date().toISOString();
+        }
+
+        const { error } = await dashboardClient.from('returns').update(updates).eq('id', returnId);
+
+        if (error) throw error;
+        await queryClient.invalidateQueries({ queryKey: dashboardKeys.adminReturnsPrefix });
+        setSelectedReturn(null);
+      } catch (error) {
+        console.error('Error updating return:', error);
       }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      setReturns(data || []);
-    } catch (error) {
-      console.error('Error fetching returns:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateReturnStatus = async (returnId: string, newStatus: string) => {
-    try {
-      const updates: any = { status: newStatus };
-
-      if (newStatus === 'approved') {
-        updates.approved_at = new Date().toISOString();
-      } else if (newStatus === 'processed') {
-        updates.processed_at = new Date().toISOString();
-      }
-
-      const { error } = await supabase
-        .from('returns')
-        .update(updates)
-        .eq('id', returnId);
-
-      if (error) throw error;
-      fetchReturns();
-      setSelectedReturn(null);
-    } catch (error) {
-      console.error('Error updating return:', error);
-    }
-  };
+    },
+    [queryClient]
+  );
 
   const filteredReturns = returns.filter(ret =>
     ret.return_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 
 export interface ShippingProgram {
   id: string;
@@ -24,7 +24,7 @@ export function useShippingPrograms() {
 
   const fetchPrograms = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('shipping_programs')
         .select('*')
         .order('display_order', { ascending: true });
@@ -44,10 +44,10 @@ export function useShippingPrograms() {
 
   const createProgram = async (program: Omit<ShippingProgram, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await dashboardClient.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { data: admin } = await supabase
+      const { data: admin } = await dashboardClient
         .from('admin_users')
         .select('id')
         .eq('user_id', user.id)
@@ -55,7 +55,7 @@ export function useShippingPrograms() {
 
       if (!admin) throw new Error('Admin user not found');
 
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('shipping_programs')
         .insert({
           ...program,
@@ -74,10 +74,10 @@ export function useShippingPrograms() {
 
   const updateProgram = async (id: string, updates: Partial<ShippingProgram>) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await dashboardClient.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { data: admin } = await supabase
+      const { data: admin } = await dashboardClient
         .from('admin_users')
         .select('id')
         .eq('user_id', user.id)
@@ -85,7 +85,7 @@ export function useShippingPrograms() {
 
       if (!admin) throw new Error('Admin user not found');
 
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('shipping_programs')
         .update({
           ...updates,
@@ -104,7 +104,7 @@ export function useShippingPrograms() {
 
   const deleteProgram = async (id: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('shipping_programs')
         .delete()
         .eq('id', id);

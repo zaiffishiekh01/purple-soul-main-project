@@ -237,11 +237,10 @@ After:  Dynamic carriers with capability badges
 ## 📁 **FILES CREATED/MODIFIED**
 
 ### **Database:**
-- ✅ `supabase/migrations/create_carrier_integrations_system.sql`
+- ✅ `postgres/migrations/create_carrier_integrations_system.sql`
 
 ### **Backend:**
-- ✅ `supabase/functions/get-shipping-rates/index.ts`
-- ✅ `supabase/functions/create-shipping-label/index.ts`
+- ✅ `app/api/functions/[name]/route.ts` — handlers `get-shipping-rates`, `create-shipping-label`, etc.
 
 ### **Frontend:**
 - ✅ `src/lib/carrier-integration.ts` (NEW)

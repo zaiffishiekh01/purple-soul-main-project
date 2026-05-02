@@ -109,7 +109,7 @@ function ProductPage() {
 ### Manual Filter Query
 
 ```typescript
-const { data } = await supabase
+const { data } = await dashboardClient
   .from('products')
   .select(`*, product_facets!inner(facet_value_id)`)
   .in('product_facets.facet_value_id', ['facet-val-1', 'facet-val-2'])
@@ -284,6 +284,6 @@ Example groups:
 ## Links to Full Documentation
 
 - Full Documentation: `FACET_FILTER_SYSTEM.md`
-- Database Schema: `supabase/migrations/create_facet_filter_system.sql`
+- Database Schema: `postgres/migrations/create_facet_filter_system.sql`
 - Component Code: `src/components/admin/AdminFacets.tsx`
 - Storefront Component: `src/components/StorefrontFilters.tsx`

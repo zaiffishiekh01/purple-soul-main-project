@@ -312,7 +312,7 @@ https://vendor.sufisciencecenter.info/api/catalog/facets
 
 **Supabase Project URL:**
 ```
-https://iqyfllnizpfpoomqbeut.supabase.co
+https://your-dashboard.example.com
 ```
 
 **Database Connection:**

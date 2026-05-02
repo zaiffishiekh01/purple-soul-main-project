@@ -1,5 +1,5 @@
-import { supabase } from './supabase';
-import { NEXT_PUBLIC_SUPABASE_URL } from './env';
+import { dashboardClient } from './data-client';
+import { authenticatedFetch } from './authenticated-fetch';
 
 export interface CarrierIntegration {
   id: string;
@@ -56,7 +56,7 @@ export interface LabelResponse {
 }
 
 export async function getActiveCarriers(): Promise<CarrierIntegration[]> {
-  const { data, error } = await supabase
+  const { data, error } = await dashboardClient
     .from('carrier_integrations')
     .select('*')
     .eq('is_active', true)
@@ -77,18 +77,13 @@ export async function getShippingRates(
   packageDetails: PackageDetails
 ): Promise<ShippingRate[]> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await dashboardClient.auth.getSession();
     if (!session) {
       throw new Error('Not authenticated');
     }
 
-    const apiUrl = `${NEXT_PUBLIC_SUPABASE_URL}/functions/v1/get-shipping-rates`;
-    const response = await fetch(apiUrl, {
+    const response = await authenticatedFetch(`/api/functions/get-shipping-rates`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({
         carrier_code: carrierCode,
         origin,
@@ -153,18 +148,13 @@ export async function createShippingLabel(
   packageDetails: PackageDetails
 ): Promise<LabelResponse> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await dashboardClient.auth.getSession();
     if (!session) {
       throw new Error('Not authenticated');
     }
 
-    const apiUrl = `${NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create-shipping-label`;
-    const response = await fetch(apiUrl, {
+    const response = await authenticatedFetch(`/api/functions/create-shipping-label`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({
         carrier_code: carrierCode,
         shipment_id: shipmentId,

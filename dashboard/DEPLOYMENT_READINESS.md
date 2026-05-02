@@ -75,8 +75,8 @@ This application is **production-ready** and can be deployed immediately. All cr
 
 ### ✅ Required Variables (Already Set)
 ```bash
-VITE_SUPABASE_URL=https://iqyfllnizpfpoomqbeut.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGci... (configured)
+NEXTAUTH_URL=https://your-dashboard.example.com
+AUTH_SECRET=eyJhbGci... (configured)
 ```
 
 ### 🟡 Optional API Keys (For Full Functionality)

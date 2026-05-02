@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 import { AdminUser } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -12,7 +12,7 @@ export function useAdmin() {
   useEffect(() => {
     const fetchAdminStatus = async () => {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await dashboardClient
           .from('admin_users')
           .select('*')
           .eq('user_id', userId)
@@ -45,7 +45,7 @@ export function useAdmin() {
 
   const refetch = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('admin_users')
         .select('*')
         .eq('user_id', userId)

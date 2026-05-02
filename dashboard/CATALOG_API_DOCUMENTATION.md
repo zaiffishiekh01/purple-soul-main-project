@@ -13,20 +13,20 @@ Three read-only Supabase Edge Functions that expose the Admin Dashboard's catalo
 ## Base URL
 
 ```
-https://[your-project-id].supabase.co/functions/v1/
+https://<your-dashboard-host>/
 ```
 
 ---
 
 ## API Endpoints
 
-### 1. GET /get-catalog-navigation
+### 1. GET /api/catalog/navigation
 
 Returns storefront menu structure controlled by Admin.
 
 #### Endpoint
 ```
-GET /get-catalog-navigation
+GET /api/catalog/navigation
 ```
 
 #### Description
@@ -102,7 +102,7 @@ None
 ```javascript
 // Fetch navigation for storefront header
 const response = await fetch(
-  'https://your-project.supabase.co/functions/v1/get-catalog-navigation'
+  'https://your-dashboard.example.com/api/catalog/navigation'
 );
 const { data } = await response.json();
 
@@ -126,13 +126,13 @@ data.featured.forEach(category => {
 
 ---
 
-### 2. GET /get-catalog-taxonomy
+### 2. GET /api/catalog/taxonomy
 
 Returns full hierarchical category tree. Only leaf categories are selectable for products.
 
 #### Endpoint
 ```
-GET /get-catalog-taxonomy
+GET /api/catalog/taxonomy
 ```
 
 #### Description
@@ -255,7 +255,7 @@ Provides complete category taxonomy with:
 ```javascript
 // Fetch full taxonomy tree
 const response = await fetch(
-  'https://your-project.supabase.co/functions/v1/get-catalog-taxonomy'
+  'https://your-dashboard.example.com/api/catalog/taxonomy'
 );
 const { data } = await response.json();
 
@@ -278,7 +278,7 @@ document.getElementById('category-tree').innerHTML =
 ```javascript
 // Fetch only leaf categories (assignable to products)
 const response = await fetch(
-  'https://your-project.supabase.co/functions/v1/get-catalog-taxonomy'
+  'https://your-dashboard.example.com/api/catalog/taxonomy'
 );
 const { data } = await response.json();
 
@@ -296,7 +296,7 @@ data.leaf_categories.forEach(cat => {
 ```javascript
 // Fetch flat structure for search indexing
 const response = await fetch(
-  'https://your-project.supabase.co/functions/v1/get-catalog-taxonomy?flat=true'
+  'https://your-dashboard.example.com/api/catalog/taxonomy?flat=true'
 );
 const { data } = await response.json();
 
@@ -322,13 +322,13 @@ data.categories.forEach(cat => {
 
 ---
 
-### 3. GET /get-catalog-facets
+### 3. GET /api/catalog/facets
 
 Returns facet groups, facet values, and category-to-facet mappings (required vs optional).
 
 #### Endpoint
 ```
-GET /get-catalog-facets
+GET /api/catalog/facets
 ```
 
 #### Description
@@ -471,7 +471,7 @@ Provides complete facet system including:
 // Fetch facets for current category
 const categoryId = 'modest-clothing-uuid';
 const response = await fetch(
-  `https://your-project.supabase.co/functions/v1/get-catalog-facets?category_id=${categoryId}`
+  `https://your-dashboard.example.com/api/catalog/facets?category_id=${categoryId}`
 );
 const { data } = await response.json();
 
@@ -491,7 +491,7 @@ data.category_details.optional.forEach(mapping => {
 ```javascript
 // Get required facets for selected category
 const response = await fetch(
-  `https://your-project.supabase.co/functions/v1/get-catalog-facets?category_id=${categoryId}`
+  `https://your-dashboard.example.com/api/catalog/facets?category_id=${categoryId}`
 );
 const { data } = await response.json();
 
@@ -511,7 +511,7 @@ if (missingFacets.length > 0) {
 ```javascript
 // Build filter URLs based on facet values
 const response = await fetch(
-  'https://your-project.supabase.co/functions/v1/get-catalog-facets'
+  'https://your-dashboard.example.com/api/catalog/facets'
 );
 const { data } = await response.json();
 
@@ -623,7 +623,7 @@ async function getCatalogNavigation() {
 
   // Fetch fresh data
   const response = await fetch(
-    'https://your-project.supabase.co/functions/v1/get-catalog-navigation'
+    'https://your-dashboard.example.com/api/catalog/navigation'
   );
   const result = await response.json();
 
@@ -659,7 +659,7 @@ export function useCatalogNavigation() {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    fetch('https://your-project.supabase.co/functions/v1/get-catalog-navigation')
+    fetch('https://your-dashboard.example.com/api/catalog/navigation')
       .then(res => res.json())
       .then(result => {
         if (result.success) {
@@ -706,8 +706,8 @@ export function useCatalogTaxonomy(categoryId = null) {
   const fetchTaxonomy = async () => {
     try {
       const url = categoryId
-        ? `https://your-project.supabase.co/functions/v1/get-catalog-taxonomy?category_id=${categoryId}`
-        : 'https://your-project.supabase.co/functions/v1/get-catalog-taxonomy';
+        ? `https://your-dashboard.example.com/api/catalog/taxonomy?category_id=${categoryId}`
+        : 'https://your-dashboard.example.com/api/catalog/taxonomy';
 
       const response = await fetch(url);
       const result = await response.json();
@@ -746,7 +746,7 @@ class CatalogAPI {
       return cached.data;
     }
 
-    const response = await fetch(`${this.baseUrl}/get-catalog-navigation`);
+    const response = await fetch(`${this.baseUrl}/api/catalog/navigation`);
     const result = await response.json();
 
     if (result.success) {
@@ -763,7 +763,7 @@ class CatalogAPI {
   async getTaxonomy(options = {}) {
     const params = new URLSearchParams(options);
     const response = await fetch(
-      `${this.baseUrl}/get-catalog-taxonomy?${params}`
+      `${this.baseUrl}/api/catalog/taxonomy?${params}`
     );
     const result = await response.json();
 
@@ -777,7 +777,7 @@ class CatalogAPI {
   async getFacets(categoryId = null) {
     const params = categoryId ? `?category_id=${categoryId}` : '';
     const response = await fetch(
-      `${this.baseUrl}/get-catalog-facets${params}`
+      `${this.baseUrl}/api/catalog/facets${params}`
     );
     const result = await response.json();
 
@@ -790,9 +790,7 @@ class CatalogAPI {
 }
 
 // Usage
-const catalogAPI = new CatalogAPI(
-  'https://your-project.supabase.co/functions/v1'
-);
+const catalogAPI = new CatalogAPI('https://your-dashboard.example.com');
 
 const navigation = await catalogAPI.getNavigation();
 const taxonomy = await catalogAPI.getTaxonomy({ flat: true });
@@ -856,9 +854,9 @@ const facets = await catalogAPI.getFacets('category-uuid');
 ## Summary
 
 ✅ **Three Production-Ready APIs:**
-- GET /get-catalog-navigation - Menu structure
-- GET /get-catalog-taxonomy - Category hierarchy
-- GET /get-catalog-facets - Filters and attributes
+- GET /api/catalog/navigation - Menu structure
+- GET /api/catalog/taxonomy - Category hierarchy
+- GET /api/catalog/facets - Filters and attributes
 
 ✅ **Features:**
 - Read-only access (no authentication required)

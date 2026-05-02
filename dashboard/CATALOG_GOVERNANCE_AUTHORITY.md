@@ -388,25 +388,25 @@ class StorefrontCatalog {
   }
 
   async getNavigation() {
-    const response = await fetch(`${this.apiBaseUrl}/get-catalog-navigation`);
+    const response = await fetch(`${this.apiBaseUrl}/api/catalog/navigation`);
     return response.json();
   }
 
   async getTaxonomy() {
-    const response = await fetch(`${this.apiBaseUrl}/get-catalog-taxonomy`);
+    const response = await fetch(`${this.apiBaseUrl}/api/catalog/taxonomy`);
     return response.json();
   }
 
   async getFacets(categoryId) {
     const response = await fetch(
-      `${this.apiBaseUrl}/get-catalog-facets?category_id=${categoryId}`
+      `${this.apiBaseUrl}/api/catalog/facets?category_id=${categoryId}`
     );
     return response.json();
   }
 }
 
-// Usage in storefront
-const catalog = new StorefrontCatalog('https://project.supabase.co/functions/v1');
+// Usage in storefront (origin only — paths are /api/catalog/*)
+const catalog = new StorefrontCatalog('https://your-dashboard.example.com');
 
 // Get navigation for header
 const { data: nav } = await catalog.getNavigation();

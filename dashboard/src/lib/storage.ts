@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { dashboardClient } from './data-client';
 
 export const STORAGE_BUCKET = 'product-images';
 export const DIGITAL_PRODUCTS_BUCKET = 'digital-products';
@@ -8,7 +8,7 @@ export async function uploadProductImage(file: File, productId: string): Promise
   const fileName = `${productId}-${Date.now()}.${fileExt}`;
   const filePath = `products/${fileName}`;
 
-  const { error: uploadError } = await supabase.storage
+  const { error: uploadError } = await dashboardClient.storage
     .from(STORAGE_BUCKET)
     .upload(filePath, file, {
       cacheControl: '3600',
@@ -19,7 +19,7 @@ export async function uploadProductImage(file: File, productId: string): Promise
     throw uploadError;
   }
 
-  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(filePath);
+  const { data } = dashboardClient.storage.from(STORAGE_BUCKET).getPublicUrl(filePath);
 
   return data.publicUrl;
 }
@@ -28,7 +28,7 @@ export async function deleteProductImage(imageUrl: string): Promise<void> {
   const path = imageUrl.split(`${STORAGE_BUCKET}/`)[1];
   if (!path) return;
 
-  const { error } = await supabase.storage.from(STORAGE_BUCKET).remove([path]);
+  const { error } = await dashboardClient.storage.from(STORAGE_BUCKET).remove([path]);
 
   if (error) {
     throw error;
@@ -49,7 +49,7 @@ export async function uploadDigitalProduct(
   const fileName = `${productId}-${Date.now()}-${sanitizedFileName}`;
   const filePath = `products/${fileName}`;
 
-  const { error: uploadError } = await supabase.storage
+  const { error: uploadError } = await dashboardClient.storage
     .from(DIGITAL_PRODUCTS_BUCKET)
     .upload(filePath, file, {
       cacheControl: '3600',
@@ -60,7 +60,7 @@ export async function uploadDigitalProduct(
     throw uploadError;
   }
 
-  const { data } = supabase.storage.from(DIGITAL_PRODUCTS_BUCKET).getPublicUrl(filePath);
+  const { data } = dashboardClient.storage.from(DIGITAL_PRODUCTS_BUCKET).getPublicUrl(filePath);
 
   return {
     filePath,
@@ -71,7 +71,7 @@ export async function uploadDigitalProduct(
 }
 
 export async function deleteDigitalProduct(filePath: string): Promise<void> {
-  const { error } = await supabase.storage.from(DIGITAL_PRODUCTS_BUCKET).remove([filePath]);
+  const { error } = await dashboardClient.storage.from(DIGITAL_PRODUCTS_BUCKET).remove([filePath]);
 
   if (error) {
     throw error;

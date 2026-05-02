@@ -5,7 +5,7 @@ import { BulkUploadModal } from './modals/BulkUploadModal';
 import { ImportHistoryModal } from './modals/ImportHistoryModal';
 import { useProducts } from '../hooks/useProducts';
 import { useVendor } from '../hooks/useVendor';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 import { Product } from '../types';
 
 export function ProductManagementContainer() {
@@ -74,7 +74,7 @@ export function ProductManagementContainer() {
     let importId: string | null = null;
 
     try {
-      const { data: importRecord, error: importError } = await supabase
+      const { data: importRecord, error: importError } = await dashboardClient
         .from('product_imports')
         .insert({
           vendor_id: vendor.id,
@@ -91,7 +91,7 @@ export function ProductManagementContainer() {
       const lines = text.split('\n').filter((line) => line.trim());
 
       if (lines.length < 2) {
-        await supabase
+        await dashboardClient
           .from('product_imports')
           .update({ status: 'failed', errors: ['File is empty or invalid'], completed_at: new Date().toISOString() })
           .eq('id', importId);
@@ -105,7 +105,7 @@ export function ProductManagementContainer() {
 
       if (missingFields.length > 0) {
         const errorMsg = `Missing required columns: ${missingFields.join(', ')}`;
-        await supabase
+        await dashboardClient
           .from('product_imports')
           .update({ status: 'failed', errors: [errorMsg], total_rows: totalRows, completed_at: new Date().toISOString() })
           .eq('id', importId);
@@ -161,7 +161,7 @@ export function ProductManagementContainer() {
         }
       }
 
-      await supabase
+      await dashboardClient
         .from('product_imports')
         .update({
           status: 'completed',
@@ -176,7 +176,7 @@ export function ProductManagementContainer() {
       return { success: successCount, errors };
     } catch (error) {
       if (importId) {
-        await supabase
+        await dashboardClient
           .from('product_imports')
           .update({ status: 'failed', errors: ['Failed to process file'], completed_at: new Date().toISOString() })
           .eq('id', importId);

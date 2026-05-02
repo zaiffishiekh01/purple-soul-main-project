@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { DollarSign, CheckCircle, XCircle, Clock, Settings, MessageSquare, Zap, RotateCcw, FileText, Download, Eye } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
-import { NEXT_PUBLIC_SUPABASE_URL } from '../../lib/env';
+import { dashboardClient } from '../../lib/data-client';
+import { loadPayoutRequestsWithVendors, loadPlatformFeesWithVendors } from '../../lib/dashboard-relational-loaders';
+import { authenticatedFetch } from '../../lib/authenticated-fetch';
 
 interface PayoutRequest {
   id: string;
@@ -67,29 +68,10 @@ export function AdminPayouts() {
       setLoading(true);
     }
     try {
-      const [payoutsRes, feesRes] = await Promise.all([
-        supabase
-          .from('payout_requests')
-          .select(`
-            *,
-            vendors (
-              business_name,
-              contact_email
-            )
-          `)
-          .order('request_date', { ascending: false }),
-        supabase
-          .from('platform_fees')
-          .select(`
-            *,
-            vendors (
-              business_name
-            )
-          `)
-      ]);
+      const [payoutRows, feeRows] = await Promise.all([loadPayoutRequestsWithVendors(), loadPlatformFeesWithVendors()]);
 
-      if (payoutsRes.data) setPayoutRequests(payoutsRes.data);
-      if (feesRes.data) setPlatformFees(feesRes.data);
+      setPayoutRequests(payoutRows as PayoutRequest[]);
+      setPlatformFees(feeRows as PlatformFee[]);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -100,7 +82,7 @@ export function AdminPayouts() {
   const handleApprove = async (requestId: string) => {
     setProcessingAction(requestId);
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('payout_requests')
         .update({
           status: 'approved',
@@ -112,7 +94,7 @@ export function AdminPayouts() {
 
       const request = payoutRequests.find(r => r.id === requestId);
       if (request?.vendors) {
-        await supabase.from('notifications').insert({
+        await dashboardClient.from('notifications').insert({
           vendor_id: request.vendor_id,
           type: 'payment',
           title: 'Payout Approved',
@@ -140,7 +122,7 @@ export function AdminPayouts() {
     }
 
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('payout_requests')
         .update({
           status: 'rejected',
@@ -153,7 +135,7 @@ export function AdminPayouts() {
 
       const request = payoutRequests.find(r => r.id === requestId);
       if (request?.vendors) {
-        await supabase.from('notifications').insert({
+        await dashboardClient.from('notifications').insert({
           vendor_id: request.vendor_id,
           type: 'payment',
           title: 'Payout Rejected',
@@ -178,24 +160,17 @@ export function AdminPayouts() {
       if (!request) throw new Error('Payout request not found');
 
       if (useStripe) {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await dashboardClient.auth.getSession();
         if (!session) throw new Error('Not authenticated');
 
-        const response = await fetch(
-          `${NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create-automatic-payout`,
-          {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${session.access_token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              payoutRequestId: requestId,
-              vendorId: request.vendor_id,
-              amount: request.net_amount,
-            }),
-          }
-        );
+        const response = await authenticatedFetch('/api/functions/create-automatic-payout', {
+          method: 'POST',
+          body: JSON.stringify({
+            payoutRequestId: requestId,
+            vendorId: request.vendor_id,
+            amount: request.net_amount,
+          }),
+        });
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -209,7 +184,7 @@ export function AdminPayouts() {
       } else {
         const transferId = `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-        const { error } = await supabase
+        const { error } = await dashboardClient
           .from('payout_requests')
           .update({
             status: 'processing',
@@ -222,7 +197,7 @@ export function AdminPayouts() {
         if (error) throw error;
 
         if (request?.vendors) {
-          await supabase.from('notifications').insert({
+          await dashboardClient.from('notifications').insert({
             vendor_id: request.vendor_id,
             type: 'payment',
             title: 'Payout Processing',
@@ -252,7 +227,7 @@ export function AdminPayouts() {
         throw new Error('Payout request not found');
       }
 
-      const { data: updatedRequest, error: updateError } = await supabase
+      const { data: updatedRequest, error: updateError } = await dashboardClient
         .from('payout_requests')
         .update({
           status: 'completed',
@@ -269,7 +244,7 @@ export function AdminPayouts() {
 
       const transactionId = `PAYOUT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-      const { error: transactionError } = await supabase
+      const { error: transactionError } = await dashboardClient
         .from('transactions')
         .insert({
           vendor_id: request.vendor_id,
@@ -284,7 +259,7 @@ export function AdminPayouts() {
         console.error('Transaction creation error:', transactionError);
       }
 
-      const { error: notificationError } = await supabase.from('notifications').insert({
+      const { error: notificationError } = await dashboardClient.from('notifications').insert({
         vendor_id: request.vendor_id,
         type: 'payment',
         title: 'Payout Completed',
@@ -314,7 +289,7 @@ export function AdminPayouts() {
     }
 
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('payout_requests')
         .update({
           status: 'failed',
@@ -326,7 +301,7 @@ export function AdminPayouts() {
 
       const request = payoutRequests.find(r => r.id === requestId);
       if (request?.vendors) {
-        await supabase.from('notifications').insert({
+        await dashboardClient.from('notifications').insert({
           vendor_id: request.vendor_id,
           type: 'payment',
           title: 'Payout Failed',
@@ -351,7 +326,7 @@ export function AdminPayouts() {
       const newTransferId = `TXN-RETRY-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const newRetryCount = (request?.retry_count || 0) + 1;
 
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('payout_requests')
         .update({
           status: 'processing',
@@ -365,7 +340,7 @@ export function AdminPayouts() {
       if (error) throw error;
 
       if (request?.vendors) {
-        await supabase.from('notifications').insert({
+        await dashboardClient.from('notifications').insert({
           vendor_id: request.vendor_id,
           type: 'payment',
           title: 'Payout Retry Initiated',
@@ -398,12 +373,12 @@ export function AdminPayouts() {
       const existingFee = platformFees.find(f => f.vendor_id === selectedVendor.id);
 
       if (existingFee) {
-        await supabase
+        await dashboardClient
           .from('platform_fees')
           .update({ fee_percentage: fee, updated_at: new Date().toISOString() })
           .eq('id', existingFee.id);
       } else {
-        await supabase
+        await dashboardClient
           .from('platform_fees')
           .insert({
             vendor_id: selectedVendor.id,
@@ -412,7 +387,7 @@ export function AdminPayouts() {
           });
       }
 
-      await supabase.from('notifications').insert({
+      await dashboardClient.from('notifications').insert({
         vendor_id: selectedVendor.id,
         type: 'system',
         title: 'Platform Fee Updated',
@@ -653,11 +628,9 @@ export function AdminPayouts() {
                             <>
                               <button
                                 onClick={() => {
-                                  console.log('Complete button clicked!', request);
                                   setSelectedRequest(request);
                                   setShowCompleteModal(true);
                                   setWorkflowStep(3);
-                                  console.log('Modal should open now - showCompleteModal set to true');
                                 }}
                                 disabled={processingAction === request.id}
                                 className="px-3 py-1.5 bg-green-50 hover:bg-green-100 rounded-lg transition-colors text-green-600 text-sm font-medium flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"

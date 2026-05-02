@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { InventoryManagement } from './InventoryManagement';
 import { useInventory } from '../hooks/useInventory';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 
 export function InventoryManagementContainer() {
   const { inventory, loading, refetch } = useInventory();
@@ -11,7 +11,7 @@ export function InventoryManagementContainer() {
   useEffect(() => {
     const fetchVendors = async () => {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await dashboardClient
           .from('vendors')
           .select('id, business_name')
           .eq('status', 'active')

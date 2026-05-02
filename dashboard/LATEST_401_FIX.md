@@ -78,7 +78,7 @@ WHERE user_id = 'YOUR_USER_ID';
 **Fix:**
 ```bash
 supabase secrets set \
-  SUPABASE_URL=https://naesxujdffcmatntrlfr.supabase.co \
+  SUPABASE_URL=https://your-dashboard.example.com \
   SUPABASE_SERVICE_ROLE_KEY=YOUR_KEY \
   --project-ref naesxujdffcmatntrlfr
 ```

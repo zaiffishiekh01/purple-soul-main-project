@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { DollarSign, Plus, Edit, Trash2, Globe, Package, Store, X, Save } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { dashboardClient } from '../../lib/data-client';
 import { RegionalPriceRule } from '../../types';
 import { useCategoryNames } from '../../hooks/useCategories';
 
@@ -51,7 +51,7 @@ export function AdminPricingRules() {
 
   const fetchRules = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('regional_price_rules')
         .select('*')
         .order('priority', { ascending: false });
@@ -67,7 +67,7 @@ export function AdminPricingRules() {
 
   const fetchProducts = async () => {
     try {
-      const { data } = await supabase
+      const { data } = await dashboardClient
         .from('products')
         .select('id, name, sku')
         .order('name');
@@ -79,7 +79,7 @@ export function AdminPricingRules() {
 
   const fetchVendors = async () => {
     try {
-      const { data } = await supabase
+      const { data } = await dashboardClient
         .from('vendors')
         .select('id, business_name')
         .order('business_name');
@@ -110,14 +110,14 @@ export function AdminPricingRules() {
       }
 
       if (editingRule) {
-        const { error } = await supabase
+        const { error } = await dashboardClient
           .from('regional_price_rules')
           .update(ruleData)
           .eq('id', editingRule.id);
 
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        const { error } = await dashboardClient
           .from('regional_price_rules')
           .insert([ruleData]);
 
@@ -138,7 +138,7 @@ export function AdminPricingRules() {
     if (!confirm('Are you sure you want to delete this pricing rule?')) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('regional_price_rules')
         .delete()
         .eq('id', ruleId);
@@ -153,7 +153,7 @@ export function AdminPricingRules() {
 
   const toggleRuleStatus = async (rule: RegionalPriceRule) => {
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('regional_price_rules')
         .update({ is_active: !rule.is_active })
         .eq('id', rule.id);

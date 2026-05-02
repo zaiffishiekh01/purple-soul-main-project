@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 import { Vendor } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -35,7 +35,7 @@ export function useVendor() {
       try {
         if (mounted) setLoading(true);
 
-        const { data, error } = await supabase
+        const { data, error } = await dashboardClient
           .from('vendors')
           .select('*')
           .eq('user_id', userId)
@@ -66,7 +66,7 @@ export function useVendor() {
             logo_url: '',
           };
 
-          const { data: created, error: createError } = await supabase
+          const { data: created, error: createError } = await dashboardClient
             .from('vendors')
             .insert(newVendor)
             .select()
@@ -110,7 +110,7 @@ export function useVendor() {
 
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('vendors')
         .select('*')
         .eq('user_id', currentUserId)
@@ -135,7 +135,7 @@ export function useVendor() {
           return currentVendor;
         }
 
-        supabase
+        dashboardClient
           .from('vendors')
           .update(updates)
           .eq('id', currentVendor.id)

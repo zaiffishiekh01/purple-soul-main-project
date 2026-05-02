@@ -1,131 +1,55 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { supabase } from '../lib/supabase';
+import { useCallback, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { dashboardClient } from '../lib/data-client';
+import { loadOrdersWithItemsAndProducts } from '../lib/dashboard-relational-loaders';
+import { dashboardKeys } from '../lib/dashboard-query-keys';
 import { Order } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
 export function useOrders(vendorId?: string) {
   const { isAdmin } = useAuth();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const isFetchingRef = useRef(false);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (isFetchingRef.current) return;
+  const query = useQuery({
+    queryKey: dashboardKeys.orders({ isAdmin, vendorId: vendorId ?? null }),
+    queryFn: () =>
+      loadOrdersWithItemsAndProducts({
+        isAdmin,
+        vendorId: vendorId ?? undefined,
+      }),
+    enabled: isAdmin || !!vendorId,
+  });
 
-    const fetchOrders = async () => {
-      if (!vendorId && !isAdmin) {
-        setOrders([]);
-        setLoading(false);
-        return;
-      }
+  const orders = (query.data ?? []) as Order[];
 
-      isFetchingRef.current = true;
-      try {
-        setLoading(true);
-
-        const tableName = isAdmin ? 'orders' : 'vendor_orders';
-
-        let query = supabase
-          .from(tableName)
-          .select(`
-            *,
-            order_items (
-              id,
-              product_id,
-              quantity,
-              unit_price,
-              products (
-                id,
-                name,
-                sku,
-                category
-              )
-            )
-          `);
-
-        if (!isAdmin && vendorId) {
-          query = query.eq('vendor_id', vendorId);
-        }
-
-        query = query.order('created_at', { ascending: false });
-
-        const { data, error } = await query;
-
-        if (error) throw error;
-        setOrders((data || []) as Order[]);
-      } catch (error) {
-        console.error('Error fetching orders:', error);
-        setOrders([]);
-      } finally {
-        setLoading(false);
-        isFetchingRef.current = false;
-      }
-    };
-
-    fetchOrders();
-  }, [vendorId, isAdmin]);
-
-  const updateOrder = useCallback(async (id: string, updates: Partial<Order>) => {
-    const { data, error } = await supabase
-      .from('orders')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    setOrders((prev) => prev.map((o) => (o.id === id ? (data as Order) : o)));
-    return data as Order;
-  }, []);
-
-  const refetch = useCallback(async () => {
-    if (!vendorId && !isAdmin) return;
-
-    try {
-      setLoading(true);
-
-      const tableName = isAdmin ? 'orders' : 'vendor_orders';
-
-      let query = supabase
-        .from(tableName)
-        .select(`
-          *,
-          order_items (
-            id,
-            product_id,
-            quantity,
-            unit_price,
-            products (
-              id,
-              name,
-              sku,
-              category
-            )
-          )
-        `);
-
-      if (!isAdmin && vendorId) {
-        query = query.eq('vendor_id', vendorId);
-      }
-
-      query = query.order('created_at', { ascending: false });
-
-      const { data, error } = await query;
+  const updateOrder = useCallback(
+    async (id: string, updates: Partial<Order>) => {
+      const { data, error } = await dashboardClient
+        .from('orders')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
 
       if (error) throw error;
-      setOrders((data || []) as Order[]);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [vendorId, isAdmin]);
 
-  return useMemo(() => ({
-    orders,
-    loading,
-    updateOrder,
-    refetch,
-  }), [orders, loading, updateOrder, refetch]);
+      await queryClient.invalidateQueries({ queryKey: dashboardKeys.ordersPrefix });
+      return data as Order;
+    },
+    [queryClient]
+  );
+
+  const refetch = useCallback(async () => {
+    await query.refetch();
+  }, [query]);
+
+  return useMemo(
+    () => ({
+      orders,
+      loading: query.isPending || query.isRefetching,
+      updateOrder,
+      refetch,
+    }),
+    [orders, query.isPending, query.isRefetching, updateOrder, refetch]
+  );
 }

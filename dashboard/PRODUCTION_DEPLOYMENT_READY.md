@@ -117,8 +117,8 @@ If health check returns HTML instead of JSON, you need to migrate from static ho
    - Click "Create Web Service"
 
 4. **Add environment variables in Render dashboard:**
-   - `VITE_SUPABASE_URL` = your Supabase project URL
-   - `VITE_SUPABASE_ANON_KEY` = your Supabase anon key
+   - `NEXTAUTH_URL` = your Supabase project URL
+   - `AUTH_SECRET` = your Supabase anon key
 
 5. **Wait for deployment** (2-3 minutes)
 
@@ -250,7 +250,7 @@ curl -I https://vendor.sufisciencecenter.info | grep -i server
 - Restart server
 
 **CORS errors:**
-- Verify `cors` middleware in `server.cjs`
+- Verify CORS headers on the relevant `app/api/**/route.ts` handlers or your reverse proxy
 - Check response headers: `curl -I https://...`
 
 ---

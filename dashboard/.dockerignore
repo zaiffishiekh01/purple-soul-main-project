@@ -1,23 +1,35 @@
+# Dependencies & build output
 node_modules
+.next
 npm-debug.log
 .npm
+
+# Secrets & local tooling (never bake into image)
 .env
 .env.local
+.env.*.local
+
+# Git & IDE
 .git
 .gitignore
 .vscode
 .idea
+
+# Large / non-runtime paths (migrations run via CI or host, not inside Next image)
+postgres/migrations
+
+# Docs & misc (not needed to compile the app)
 *.md
-README.md
-src
-public
+!README.md
+
+# Legacy / unused in Next build
 .bolt
 backend
-supabase/migrations
-test-api-endpoints.sh
-verify-fixes.sh
-*.txt
-*.log
-.DS_Store
 coverage
 .nyc_output
+*.log
+*.txt
+.DS_Store
+test-api-endpoints.sh
+verify-fixes.sh
+scripts/*.html

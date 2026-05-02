@@ -262,6 +262,22 @@ export interface ProductLicense {
   last_downloaded_at: string | null;
 }
 
+export interface OrderLineItem {
+  id: string;
+  order_id: string;
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+  created_at?: string;
+  products?: {
+    id: string;
+    name: string;
+    sku: string;
+    category: string;
+  };
+}
+
 export interface Order {
   id: string;
   vendor_id: string;
@@ -289,6 +305,8 @@ export interface Order {
   notes: string;
   created_at: string;
   updated_at: string;
+  /** Populated by `/api/dashboard/orders-with-items` (line items + product summary). */
+  items?: OrderLineItem[];
 }
 
 export interface Notification {
@@ -311,6 +329,12 @@ export interface Transaction {
   status: string;
   description: string;
   created_at: string;
+  /** Populated by `/api/dashboard/transactions-with-vendors`. */
+  vendors?: {
+    id: string;
+    business_name: string;
+    contact_email: string;
+  };
 }
 
 export interface AdminUser {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FileText, CheckCircle, XCircle, Clock, Eye, Download } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { dashboardClient } from '../../lib/data-client';
 import { FeeWaiverRequest, FeeWaiverStatus, FeeWaiverType } from '../../types';
 
 interface AdminFeeWaiverRequestsProps {
@@ -22,7 +22,7 @@ export function AdminFeeWaiverRequests({}: AdminFeeWaiverRequestsProps) {
   const fetchRequests = async () => {
     try {
       setLoading(true);
-      let query = supabase
+      let query = dashboardClient
         .from('fee_waiver_requests')
         .select('*')
         .order('created_at', { ascending: false });
@@ -39,7 +39,7 @@ export function AdminFeeWaiverRequests({}: AdminFeeWaiverRequestsProps) {
 
       if (data && data.length > 0) {
         const vendorIds = [...new Set(data.map((r) => r.vendor_id))];
-        const { data: vendors } = await supabase
+        const { data: vendors } = await dashboardClient
           .from('vendors')
           .select('id, business_name, contact_email, address')
           .in('id', vendorIds);
@@ -308,7 +308,7 @@ function FeeWaiverDetailModal({ request, vendor, onClose, onUpdate }: FeeWaiverD
   const viewDocument = async () => {
     setLoadingDocument(true);
     try {
-      const { data, error } = await supabase.storage
+      const { data, error } = await dashboardClient.storage
         .from('fee-waiver-docs')
         .createSignedUrl(request.document_url, 3600);
 
@@ -339,11 +339,11 @@ function FeeWaiverDetailModal({ request, vendor, onClose, onUpdate }: FeeWaiverD
 
     setSubmitting(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await dashboardClient.auth.getUser();
 
       if (!user) throw new Error('Not authenticated');
 
-      const { data: adminUser } = await supabase
+      const { data: adminUser } = await dashboardClient
         .from('admin_users')
         .select('id')
         .eq('user_id', user.id)
@@ -363,7 +363,7 @@ function FeeWaiverDetailModal({ request, vendor, onClose, onUpdate }: FeeWaiverD
         updates.valid_until = new Date(validUntilDate).toISOString();
       }
 
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('fee_waiver_requests')
         .update(updates)
         .eq('id', request.id);

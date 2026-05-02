@@ -9,7 +9,7 @@ All endpoints are deployed and ready for integration.
 ## Base URL
 
 ```
-https://[your-supabase-project-id].supabase.co/functions/v1/
+https://<your-dashboard-host>/
 ```
 
 ---
@@ -29,7 +29,7 @@ Get storefront menu structure, featured categories, and static links
 
 ### Example Request
 ```bash
-curl https://your-project.supabase.co/functions/v1/get-catalog-navigation
+curl https://your-dashboard.example.com/api/catalog/navigation
 ```
 
 ### Example Response
@@ -66,7 +66,7 @@ curl https://your-project.supabase.co/functions/v1/get-catalog-navigation
 ### JavaScript Example
 ```javascript
 const response = await fetch(
-  'https://your-project.supabase.co/functions/v1/get-catalog-navigation'
+  'https://your-dashboard.example.com/api/catalog/navigation'
 );
 const { data } = await response.json();
 console.log(data.navigation); // Menu structure
@@ -96,13 +96,13 @@ Get full category hierarchy, leaf categories, and taxonomy tree
 ### Example Request
 ```bash
 # Get hierarchical tree
-curl https://your-project.supabase.co/functions/v1/get-catalog-taxonomy
+curl https://your-dashboard.example.com/api/catalog/taxonomy
 
 # Get flat list
-curl https://your-project.supabase.co/functions/v1/get-catalog-taxonomy?flat=true
+curl https://your-dashboard.example.com/api/catalog/taxonomy?flat=true
 
 # Get specific category
-curl https://your-project.supabase.co/functions/v1/get-catalog-taxonomy?category_id=abc-123
+curl https://your-dashboard.example.com/api/catalog/taxonomy?category_id=abc-123
 ```
 
 ### Example Response
@@ -139,7 +139,7 @@ curl https://your-project.supabase.co/functions/v1/get-catalog-taxonomy?category
 ```javascript
 // Get category tree
 const response = await fetch(
-  'https://your-project.supabase.co/functions/v1/get-catalog-taxonomy'
+  'https://your-dashboard.example.com/api/catalog/taxonomy'
 );
 const { data } = await response.json();
 
@@ -175,10 +175,10 @@ Get facets, facet values, and category-facet mappings for filtering
 ### Example Request
 ```bash
 # Get all facets
-curl https://your-project.supabase.co/functions/v1/get-catalog-facets
+curl https://your-dashboard.example.com/api/catalog/facets
 
 # Get facets for specific category
-curl https://your-project.supabase.co/functions/v1/get-catalog-facets?category_id=abc-123
+curl https://your-dashboard.example.com/api/catalog/facets?category_id=abc-123
 ```
 
 ### Example Response
@@ -229,7 +229,7 @@ curl https://your-project.supabase.co/functions/v1/get-catalog-facets?category_i
 // Get facets for category
 const categoryId = 'your-category-uuid';
 const response = await fetch(
-  `https://your-project.supabase.co/functions/v1/get-catalog-facets?category_id=${categoryId}`
+  `https://your-dashboard.example.com/api/catalog/facets?category_id=${categoryId}`
 );
 const { data } = await response.json();
 
@@ -305,13 +305,13 @@ All endpoints return consistent error format:
 
 ```bash
 # Test navigation API
-curl https://your-project.supabase.co/functions/v1/get-catalog-navigation | jq
+curl https://your-dashboard.example.com/api/catalog/navigation | jq
 
 # Test taxonomy API
-curl https://your-project.supabase.co/functions/v1/get-catalog-taxonomy | jq
+curl https://your-dashboard.example.com/api/catalog/taxonomy | jq
 
 # Test facets API
-curl https://your-project.supabase.co/functions/v1/get-catalog-facets | jq
+curl https://your-dashboard.example.com/api/catalog/facets | jq
 ```
 
 ### Test with Browser
@@ -321,9 +321,9 @@ Open browser console and run:
 ```javascript
 // Test all three APIs
 Promise.all([
-  fetch('https://your-project.supabase.co/functions/v1/get-catalog-navigation'),
-  fetch('https://your-project.supabase.co/functions/v1/get-catalog-taxonomy'),
-  fetch('https://your-project.supabase.co/functions/v1/get-catalog-facets')
+  fetch('https://your-dashboard.example.com/api/catalog/navigation'),
+  fetch('https://your-dashboard.example.com/api/catalog/taxonomy'),
+  fetch('https://your-dashboard.example.com/api/catalog/facets')
 ]).then(responses =>
   Promise.all(responses.map(r => r.json()))
 ).then(results => {
@@ -336,7 +336,7 @@ Promise.all([
 ### Test with Postman
 
 1. Create new GET request
-2. URL: `https://your-project.supabase.co/functions/v1/get-catalog-navigation`
+2. URL: `https://your-dashboard.example.com/api/catalog/navigation`
 3. Send request
 4. View JSON response
 
@@ -360,7 +360,7 @@ Promise.all([
 
 1. **Get Your Project URL**
    - Find in Supabase Dashboard → Settings → API
-   - Format: `https://[project-id].supabase.co`
+   - Format: `https://<your-dashboard-host>`
 
 2. **Test the APIs**
    - Use examples above in browser console

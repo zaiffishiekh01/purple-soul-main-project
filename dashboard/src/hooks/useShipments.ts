@@ -1,5 +1,8 @@
-import { useState, useEffect, useContext } from 'react';
-import { supabase } from '../lib/supabase';
+import { useCallback, useContext, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { dashboardClient } from '../lib/data-client';
+import { loadVendorShipmentsWithOrderInfo } from '../lib/dashboard-relational-loaders';
+import { dashboardKeys } from '../lib/dashboard-query-keys';
 import { VendorContext } from '../contexts/VendorContext';
 
 export interface Shipment {
@@ -21,83 +24,72 @@ export interface Shipment {
   has_label?: boolean;
 }
 
+function mapShipments(
+  data: unknown[]
+): Shipment[] {
+  return (
+    data?.map(
+      (
+        shipment: Record<string, unknown> & {
+          orders?: { order_number?: string; customer_name?: string };
+          shipping_label_id?: string | null;
+        }
+      ) => ({
+        ...shipment,
+        order_number: shipment.orders?.order_number,
+        customer_name: shipment.orders?.customer_name,
+        has_label: !!shipment.shipping_label_id,
+      })
+    ) || []
+  ) as Shipment[];
+}
+
 export function useShipments() {
-  const [shipments, setShipments] = useState<Shipment[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const vendorContext = useContext(VendorContext);
   const vendor = vendorContext?.vendor ?? null;
   const vendorLoading = vendorContext?.loading ?? false;
   const vendorId = vendor?.id;
 
-  useEffect(() => {
-    if (vendorLoading) {
-      return;
-    }
-    if (vendorId) {
-      fetchShipments();
-    } else {
-      setLoading(false);
-    }
-  }, [vendorId, vendorLoading]);
+  const query = useQuery({
+    queryKey: vendorId
+      ? dashboardKeys.shipmentsVendor(vendorId)
+      : (['dashboard', 'shipments', 'vendor', 'none'] as const),
+    queryFn: async () => {
+      if (!vendorId) return [];
+      const data = await loadVendorShipmentsWithOrderInfo(vendorId);
+      return mapShipments((data ?? []) as unknown[]);
+    },
+    enabled: !vendorLoading && !!vendorId,
+  });
 
-  const fetchShipments = async () => {
-    if (!vendorId) return;
+  const shipments = (query.data ?? []) as Shipment[];
 
-    try {
-      const { data, error } = await supabase
-        .from('shipments')
-        .select(`
-          *,
-          orders (
-            order_number,
-            customer_name
-          ),
-          shipping_labels:shipping_label_id (
-            id
-          )
-        `)
-        .eq('vendor_id', vendorId)
-        .order('created_at', { ascending: false });
+  const invalidate = useCallback(() => {
+    if (!vendorId) return Promise.resolve();
+    return queryClient.invalidateQueries({ queryKey: dashboardKeys.shipmentsVendor(vendorId) });
+  }, [queryClient, vendorId]);
 
-      if (error) throw error;
+  const createShipment = useCallback(
+    async (shipment: Omit<Shipment, 'id' | 'vendor_id' | 'created_at' | 'updated_at' | 'order_number' | 'customer_name'>) => {
+      if (!vendorId) return;
 
-      const shipmentsWithOrderInfo = data?.map((shipment: any) => ({
-        ...shipment,
-        order_number: shipment.orders?.order_number,
-        customer_name: shipment.orders?.customer_name,
-        has_label: !!shipment.shipping_label_id,
-      })) || [];
-
-      setShipments(shipmentsWithOrderInfo);
-    } catch (error) {
-      console.error('Error fetching shipments:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createShipment = async (shipment: Omit<Shipment, 'id' | 'vendor_id' | 'created_at' | 'updated_at' | 'order_number' | 'customer_name'>) => {
-    if (!vendorId) return;
-
-    try {
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('shipments')
         .insert({ ...shipment, vendor_id: vendorId })
         .select()
         .single();
 
       if (error) throw error;
-      await fetchShipments();
+      await invalidate();
       return data;
-    } catch (error) {
-      console.error('Error creating shipment:', error);
-      throw error;
-    }
-  };
+    },
+    [vendorId, invalidate]
+  );
 
-  const updateShipment = async (id: string, updates: Partial<Shipment>) => {
-    try {
-      const { data, error } = await supabase
+  const updateShipment = useCallback(
+    async (id: string, updates: Partial<Shipment>) => {
+      const { data, error } = await dashboardClient
         .from('shipments')
         .update(updates)
         .eq('id', id)
@@ -105,25 +97,37 @@ export function useShipments() {
         .single();
 
       if (error) throw error;
-      setShipments(shipments.map((s) => (s.id === id ? { ...s, ...data } : s)));
+      await invalidate();
       return data;
-    } catch (error) {
-      console.error('Error updating shipment:', error);
-      throw error;
-    }
-  };
+    },
+    [invalidate]
+  );
 
-  const deleteShipment = async (id: string) => {
-    try {
-      const { error } = await supabase.from('shipments').delete().eq('id', id);
-
+  const deleteShipment = useCallback(
+    async (id: string) => {
+      const { error } = await dashboardClient.from('shipments').delete().eq('id', id);
       if (error) throw error;
-      setShipments(shipments.filter((s) => s.id !== id));
-    } catch (error) {
-      console.error('Error deleting shipment:', error);
-      throw error;
-    }
-  };
+      await invalidate();
+    },
+    [invalidate]
+  );
 
-  return { shipments, loading, createShipment, updateShipment, deleteShipment, refetch: fetchShipments };
+  const refetch = useCallback(async () => {
+    await query.refetch();
+  }, [query]);
+
+  const loading =
+    vendorLoading || (!!vendorId && (query.isPending || query.isRefetching));
+
+  return useMemo(
+    () => ({
+      shipments,
+      loading,
+      createShipment,
+      updateShipment,
+      deleteShipment,
+      refetch,
+    }),
+    [shipments, loading, createShipment, updateShipment, deleteShipment, refetch]
+  );
 }

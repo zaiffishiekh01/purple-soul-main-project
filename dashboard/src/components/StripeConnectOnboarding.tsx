@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, AlertCircle, ExternalLink, DollarSign, Zap, Shield } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import { NEXT_PUBLIC_SUPABASE_URL } from '../lib/env';
+import { dashboardClient } from '../lib/data-client';
+import { authenticatedFetch } from '../lib/authenticated-fetch';
 
 interface StripeConnectOnboardingProps {
   vendorId: string;
@@ -21,7 +21,7 @@ export function StripeConnectOnboarding({ vendorId, businessName, email }: Strip
 
   const fetchStripeStatus = async () => {
     try {
-      const { data: vendor, error: vendorError } = await supabase
+      const { data: vendor, error: vendorError } = await dashboardClient
         .from('vendors')
         .select('stripe_account_id, stripe_account_status, stripe_charges_enabled, stripe_payouts_enabled, stripe_onboarding_completed')
         .eq('id', vendorId)
@@ -41,27 +41,20 @@ export function StripeConnectOnboarding({ vendorId, businessName, email }: Strip
     setError(null);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await dashboardClient.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
-      const response = await fetch(
-        `${NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create-stripe-connect-account`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            vendorId,
-            businessName,
-            email,
-            country: 'US',
-            returnUrl: `${window.location.origin}/vendor/profile?stripe_connected=true`,
-            refreshUrl: `${window.location.origin}/vendor/profile?stripe_refresh=true`,
-          }),
-        }
-      );
+      const response = await authenticatedFetch('/api/functions/create-stripe-connect-account', {
+        method: 'POST',
+        body: JSON.stringify({
+          vendorId,
+          businessName,
+          email,
+          country: 'US',
+          returnUrl: `${window.location.origin}/vendor/profile?stripe_connected=true`,
+          refreshUrl: `${window.location.origin}/vendor/profile?stripe_refresh=true`,
+        }),
+      });
 
       if (!response.ok) {
         const errorData = await response.json();

@@ -183,9 +183,9 @@ VendorWarehouseSupportEnhanced (Main Component)
 
 ---
 
-## API Endpoints (Supabase Edge Functions)
+## API Endpoints (Next.js route handlers)
 
-Located in `/supabase/functions/`:
+Shipping-related handlers live in `app/api/functions/[name]/route.ts` (POST `/api/functions/<name>`), including:
 
 1. **`create-shipping-label`** - Generate shipping labels for warehouse
 2. **`generate-shipping-label`** - Carrier-specific label generation
@@ -332,8 +332,8 @@ For issues or questions:
 
 ### Created:
 - ✅ `/src/components/VendorWarehouseSupportEnhanced.tsx` - New enhanced UI (700+ lines)
-- ✅ `/supabase/migrations/20260203060000_enhance_warehouse_storage_system.sql` - Database schema
-- ✅ `/supabase/migrations/20260203061000_add_warehouse_locations_sample_data.sql` - Sample locations
+- ✅ `/postgres/migrations/20260203060000_enhance_warehouse_storage_system.sql` - Database schema
+- ✅ `/postgres/migrations/20260203061000_add_warehouse_locations_sample_data.sql` - Sample locations
 
 ### Preserved:
 - ✅ `/src/components/VendorWarehouseSupport.tsx` - Original (can be removed or kept as backup)

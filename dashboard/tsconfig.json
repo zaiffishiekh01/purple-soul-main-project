@@ -24,12 +24,5 @@
     ]
   },
   "include": ["next-env.d.ts", "app/**/*.ts", "app/**/*.tsx", "src/**/*.ts", "src/**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": [
-    "node_modules",
-    "supabase/**",
-    "scripts/**",
-    "backend/**",
-    "vite.config.ts",
-    "src/main.tsx"
-  ]
+  "exclude": ["node_modules", "postgres/**", "scripts/**", "backend/**"]
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 
 export function useOrderLabels(orderId: string) {
   const [labelIds, setLabelIds] = useState<string[]>([]);
@@ -13,7 +13,7 @@ export function useOrderLabels(orderId: string) {
 
   const fetchOrderLabels = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('order_labels')
         .select('label_id')
         .eq('order_id', orderId);
@@ -29,7 +29,7 @@ export function useOrderLabels(orderId: string) {
 
   const addLabelToOrder = async (labelId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('order_labels')
         .insert({ order_id: orderId, label_id: labelId });
 
@@ -43,7 +43,7 @@ export function useOrderLabels(orderId: string) {
 
   const removeLabelFromOrder = async (labelId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('order_labels')
         .delete()
         .eq('order_id', orderId)

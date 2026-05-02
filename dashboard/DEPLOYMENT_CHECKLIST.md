@@ -8,8 +8,8 @@ Use this checklist to ensure correct deployment to production.
 
 ### 1. Environment Variables
 
-- [ ] `VITE_SUPABASE_URL` is set
-- [ ] `VITE_SUPABASE_ANON_KEY` is set
+- [ ] `NEXTAUTH_URL` is set
+- [ ] `AUTH_SECRET` is set
 - [ ] Values match your production Supabase project
 - [ ] Values are NOT committed to git
 
@@ -56,10 +56,10 @@ Choose ONE platform and complete its checklist:
 - [ ] GitHub repository connected
 - [ ] `render.yaml` file present in repo
 - [ ] Environment variables added in Render dashboard:
-  - [ ] `VITE_SUPABASE_URL`
-  - [ ] `VITE_SUPABASE_ANON_KEY`
+  - [ ] `NEXTAUTH_URL`
+  - [ ] `AUTH_SECRET`
 - [ ] Build command: `npm install && npm run build`
-- [ ] Start command: `node server.cjs`
+- [ ] Start command: `npm run start`
 - [ ] Deploy triggered
 - [ ] Deployment successful
 - [ ] Health check URL: `https://your-app.onrender.com/api/health`
@@ -79,8 +79,8 @@ TTL: 3600
 - [ ] Project initialized: `railway init`
 - [ ] Environment variables set:
   ```bash
-  railway variables set VITE_SUPABASE_URL=...
-  railway variables set VITE_SUPABASE_ANON_KEY=...
+  railway variables set NEXTAUTH_URL=...
+  railway variables set AUTH_SECRET=...
   ```
 - [ ] Deployed: `railway up`
 - [ ] Domain configured in Railway dashboard
@@ -93,8 +93,8 @@ TTL: 3600
 - [ ] App launched: `fly launch`
 - [ ] Environment variables set:
   ```bash
-  fly secrets set VITE_SUPABASE_URL=...
-  fly secrets set VITE_SUPABASE_ANON_KEY=...
+  fly secrets set NEXTAUTH_URL=...
+  fly secrets set AUTH_SECRET=...
   ```
 - [ ] Deployed: `fly deploy`
 - [ ] Certificate added: `fly certs add vendor.sufisciencecenter.info`
@@ -108,7 +108,7 @@ TTL: 3600
 - [ ] Dependencies installed: `npm install`
 - [ ] Project built: `npm run build`
 - [ ] `.env` file uploaded with correct values
-- [ ] PM2 started: `pm2 start server.cjs --name vendor-dashboard`
+- [ ] PM2 started: `pm2 start npm --name vendor-dashboard -- start`
 - [ ] PM2 saved: `pm2 save`
 - [ ] PM2 startup configured: `pm2 startup`
 - [ ] Nginx reverse proxy configured
@@ -139,8 +139,8 @@ server {
 - [ ] Container running:
   ```bash
   docker run -d --name vendor-dashboard -p 3000:3000 \
-    -e VITE_SUPABASE_URL="..." \
-    -e VITE_SUPABASE_ANON_KEY="..." \
+    -e NEXTAUTH_URL="..." \
+    -e AUTH_SECRET="..." \
     vendor-dashboard
   ```
 - [ ] Container healthy: `docker ps`
@@ -305,7 +305,7 @@ curl https://vendor.sufisciencecenter.info/api/health
 **Diagnosis:** CORS headers not being sent
 
 **Solution:**
-- [ ] Verify CORS middleware in `server.cjs`
+- [ ] Verify CORS middleware in `Next.js`
 - [ ] Check headers: `curl -I https://vendor.sufisciencecenter.info/api/health | grep -i access-control`
 - [ ] Ensure `cors` package is installed: `npm list cors`
 - [ ] Restart server after code changes

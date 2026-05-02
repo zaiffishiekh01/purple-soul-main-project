@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 import { VendorContext } from '../contexts/VendorContext';
 
 export interface ShippingLabel {
@@ -97,7 +97,7 @@ export function useShippingLabels() {
     if (!vendorId) return;
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('shipping_labels')
         .select('*')
         .eq('vendor_id', vendorId)
@@ -116,7 +116,7 @@ export function useShippingLabels() {
     if (!vendorId) return;
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('shipping_labels')
         .insert({ ...label, vendor_id: vendorId })
         .select()
@@ -133,7 +133,7 @@ export function useShippingLabels() {
 
   const updateLabel = async (id: string, updates: Partial<ShippingLabel>) => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('shipping_labels')
         .update(updates)
         .eq('id', id)
@@ -151,7 +151,7 @@ export function useShippingLabels() {
 
   const deleteLabel = async (id: string) => {
     try {
-      const { error } = await supabase.from('shipping_labels').delete().eq('id', id);
+      const { error } = await dashboardClient.from('shipping_labels').delete().eq('id', id);
 
       if (error) throw error;
       setLabels(labels.filter((l) => l.id !== id));

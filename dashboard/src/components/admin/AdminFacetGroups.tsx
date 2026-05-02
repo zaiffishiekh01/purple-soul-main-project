@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Save, X, AlertCircle } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { dashboardClient } from '../../lib/data-client';
 
 interface FacetGroup {
   id: string;
@@ -28,7 +28,7 @@ export function AdminFacetGroups() {
   const fetchGroups = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('facet_groups')
         .select('*')
         .order('display_order');
@@ -48,7 +48,7 @@ export function AdminFacetGroups() {
     }
 
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('facet_groups')
         .delete()
         .eq('id', id);
@@ -64,7 +64,7 @@ export function AdminFacetGroups() {
 
   const handleToggleActive = async (id: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('facet_groups')
         .update({ is_active: !currentStatus })
         .eq('id', id);
@@ -248,14 +248,14 @@ function FacetGroupModal({ group, onClose, onSave }: FacetGroupModalProps) {
 
     try {
       if (group) {
-        const { error } = await supabase
+        const { error } = await dashboardClient
           .from('facet_groups')
           .update(formData)
           .eq('id', group.id);
 
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        const { error } = await dashboardClient
           .from('facet_groups')
           .insert([formData]);
 

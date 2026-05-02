@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X, AlertCircle, Loader2 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { dashboardClient } from '../../lib/data-client';
 import { TestProductOffer } from '../../types';
 
 interface RequestModalProps {
@@ -28,7 +28,7 @@ export function RequestTestProductModal({ vendorId, onClose }: RequestModalProps
     try {
       const categoriesArray = formData.categories.split(',').map(c => c.trim()).filter(Boolean);
 
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('test_product_offers')
         .insert({
           title: formData.title,

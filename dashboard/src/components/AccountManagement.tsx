@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Key, Shield, CreditCard, Bell, Lock, Loader2, CheckCircle, Eye, EyeOff } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 
 export function AccountManagement() {
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -37,20 +37,22 @@ export function AccountManagement() {
 
     setSavingPassword(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await dashboardClient.auth.getUser();
       if (!user?.email) throw new Error('Unable to verify identity. Please sign in again.');
 
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user.email,
-        password: passwordData.current,
+      const verifyRes = await fetch('/api/auth/verify-password', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword: passwordData.current }),
       });
 
-      if (signInError) {
+      if (!verifyRes.ok) {
         setPasswordError('Current password is incorrect.');
         return;
       }
 
-      const { error } = await supabase.auth.updateUser({
+      const { error } = await dashboardClient.auth.updateUser({
         password: passwordData.newPass,
       });
 
@@ -71,7 +73,7 @@ export function AccountManagement() {
     if (deleteConfirmText !== 'DELETE') return;
     setDeletingAccount(true);
     try {
-      await supabase.auth.signOut();
+      await dashboardClient.auth.signOut();
     } catch {
       setDeletingAccount(false);
     }

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The dashboard now exposes three public JSON API endpoints that proxy to Supabase Edge Functions. These endpoints are accessible without authentication and return JSON responses with proper CORS headers.
+The dashboard exposes three public JSON catalog endpoints implemented as **Next.js Route Handlers** under `app/api/catalog/*`. They read from **Postgres** via `DATABASE_URL` (no Supabase Edge, no `@supabase/supabase-js`). Responses are JSON with CORS where configured in code.
 
 ---
 
@@ -80,30 +80,24 @@ Returns available facets and filters for product search.
 ```
 Client Request
      ↓
-GET /api/catalog/navigation
+GET /api/catalog/navigation  (or taxonomy / facets)
      ↓
-Express Server (server.cjs)
+Next.js Route Handler  (app/api/catalog/*/route.ts)
      ↓
-Proxies to Supabase Edge Function
+Server-side Postgres (pg) + application logic
      ↓
-GET {SUPABASE_URL}/functions/v1/get-catalog-navigation
-     ↓
-Returns JSON with CORS headers
-     ↓
-Client receives response
+JSON response (CORS / cache per handler)
 ```
 
-### Server Configuration
+### Server configuration
 
-**File:** `server.cjs`
+**Implementation:** `app/api/catalog/navigation/route.ts`, `taxonomy/route.ts`, `facets/route.ts`.
 
-Key features:
-- ✅ CORS enabled for all origins
-- ✅ JSON responses only (never HTML redirects)
-- ✅ Proper error handling with JSON responses
-- ✅ Public access (no authentication required)
-- ✅ 1-hour cache headers
-- ✅ Serves React SPA for non-API routes
+Key points:
+- Public GET handlers for storefront consumption (unless you add auth in code).
+- JSON responses from Next.js; no separate Express proxy.
+- Cache headers depend on each route’s implementation.
+- Full-stack app: use `npm run dev` / `npm run build` + `npm run start` (or Docker — see `Dockerfile`).
 
 ### CORS Headers
 
@@ -129,14 +123,14 @@ Clients can cache responses for 1 hour to reduce server load.
 
 ### Local Development
 
-1. **Build the React app:**
+1. **Build the Next.js app:**
    ```bash
    npm run build
    ```
 
-2. **Start the server:**
+2. **Start production server:**
    ```bash
-   npm start
+   npm run start
    ```
 
 3. **Access endpoints:**
@@ -148,80 +142,18 @@ Clients can cache responses for 1 hour to reduce server load.
 
 ### Production Deployment
 
-#### Option 1: Node.js Server (Recommended)
+#### Option 1: Node (recommended)
 
-1. **Deploy the built app with server.cjs**
-   - Upload `dist/` folder
-   - Upload `server.cjs`
-   - Upload `.env` file with Supabase credentials
+1. Set `DATABASE_URL`, `AUTH_SECRET`, `NEXTAUTH_URL` on the host (see `.env.example`).
+2. `npm ci && npm run build && npm run start`, or use **PM2**: `pm2 start npm --name vendor-dashboard -- start`.
 
-2. **Install dependencies:**
-   ```bash
-   npm install express cors dotenv
-   ```
+#### Option 2: Docker
 
-3. **Start the server:**
-   ```bash
-   node server.cjs
-   ```
+From the `dashboard` directory: `docker build -t vendor-dashboard .` then run with `--env-file .env` (see `docker-compose.yml`).
 
-4. **Use a process manager:**
-   ```bash
-   # Using PM2
-   pm2 start server.cjs --name "vendor-dashboard"
+#### Option 3: Vercel / similar
 
-   # Using systemd (create a service file)
-   sudo systemctl start vendor-dashboard
-   ```
-
-#### Option 2: Platform-Specific Configuration
-
-##### Vercel
-
-Create `vercel.json`:
-```json
-{
-  "version": 2,
-  "builds": [
-    {
-      "src": "server.cjs",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/catalog/(.*)",
-      "dest": "/server.cjs"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/server.cjs"
-    }
-  ]
-}
-```
-
-##### Netlify
-
-Create `netlify.toml`:
-```toml
-[build]
-  command = "npm run build"
-  publish = "dist"
-  functions = "netlify/functions"
-
-[[redirects]]
-  from = "/api/catalog/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-```
-
-Then create Netlify functions in `netlify/functions/`.
+Connect the repo as a **Next.js** project; framework defaults deploy `app/api/*` without a custom `vercel.json` Edge proxy.
 
 ##### Render
 
@@ -232,13 +164,13 @@ services:
     name: vendor-dashboard
     env: node
     buildCommand: npm install && npm run build
-    startCommand: node server.cjs
+    startCommand: npm run start
     envVars:
       - key: NODE_VERSION
         value: 22
-      - key: VITE_SUPABASE_URL
+      - key: NEXTAUTH_URL
         sync: false
-      - key: VITE_SUPABASE_ANON_KEY
+      - key: AUTH_SECRET
         sync: false
 ```
 
@@ -438,7 +370,7 @@ chmod +x test-api.sh
 **Cause:** React Router is catching the route before the server
 
 **Solution:**
-- Ensure `server.cjs` handles `/api/*` routes BEFORE the static file middleware
+- Ensure `Next.js` handles `/api/*` routes BEFORE the static file middleware
 - Check that `app.get('/api/catalog/*')` comes before `app.use(express.static())`
 
 ### Issue 2: CORS Error in Browser
@@ -456,24 +388,22 @@ chmod +x test-api.sh
 
 **Symptom:** API returns authentication error
 
-**Cause:** Supabase function requires authentication
+**Cause:** Route handler or middleware now requires a session for that path.
 
 **Solution:**
-- Edge functions should have `verify_jwt: false` for public access
-- Check `.env` has correct `VITE_SUPABASE_ANON_KEY`
-- Verify Supabase RLS policies allow public SELECT
+- Confirm `app/api/catalog/*` handlers are intended to be public.
+- For signed-in flows, use NextAuth session cookies, not a Supabase anon JWT.
 
 ### Issue 4: 500 Internal Server Error
 
 **Symptom:** API returns 500 status
 
-**Cause:** Supabase connection error or edge function error
+**Cause:** Database error, missing env, or unhandled exception in the Route Handler.
 
 **Solution:**
-- Check server logs: `node server.cjs`
-- Verify Supabase URL and key in `.env`
-- Test edge function directly: `curl {SUPABASE_URL}/functions/v1/get-catalog-navigation`
-- Check Supabase dashboard for function logs
+- Check server logs: `npm run start`
+- Verify `DATABASE_URL` and that migrations have been applied (`npm run db:apply-migrations`).
+- Smoke-test: `curl https://<host>/api/health` then `curl https://<host>/api/catalog/navigation`
 
 ### Issue 5: Redirect to / Instead of JSON
 
@@ -483,7 +413,7 @@ chmod +x test-api.sh
 
 **Solution:**
 - API routes must be defined BEFORE the catch-all route
-- Check route order in `server.cjs`
+- Check route order in `Next.js`
 - Ensure no authentication middleware on `/api/catalog/*` routes
 
 ---
@@ -515,7 +445,7 @@ ab -n 1000 -c 10 https://vendor.sufisciencecenter.info/api/catalog/navigation
 
 Server logs include:
 - Requests to API endpoints
-- Errors from Supabase functions
+- Errors from Route Handlers / Postgres
 - Response status codes
 
 View logs:
@@ -527,7 +457,7 @@ pm2 logs vendor-dashboard
 journalctl -u vendor-dashboard -f
 
 # Direct node
-node server.cjs 2>&1 | tee server.log
+npm run start 2>&1 | tee server.log
 ```
 
 ---
@@ -539,8 +469,8 @@ node server.cjs 2>&1 | tee server.log
 - CORS allows all origins (appropriate for public API)
 - No sensitive data in responses
 - Public read-only access
-- Rate limiting by Supabase
-- RLS policies enforce data access
+- Rate limiting at the edge or reverse proxy (recommended)
+- RLS policies in Postgres (where defined in migrations) enforce data access
 
 ### 🚧 Recommended Additions
 
@@ -575,11 +505,11 @@ node server.cjs 2>&1 | tee server.log
 Required in `.env`:
 
 ```bash
-# Supabase Configuration
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
+DATABASE_URL=postgresql://user:pass@host:5432/dbname
+NEXTAUTH_URL=https://your-dashboard.example.com
+AUTH_SECRET=openssl-rand-base64-32
 
-# Server Configuration (optional)
+# Optional
 PORT=3000
 ```
 
@@ -614,13 +544,13 @@ npm install
 
 # 2. Set up .env file
 cp .env.example .env
-# Edit .env with your Supabase credentials
+# Edit .env (DATABASE_URL, AUTH_SECRET, NEXTAUTH_URL)
 
 # 3. Build the app
 npm run build
 
 # 4. Start the server
-npm start
+npm run start
 
 # 5. Test the endpoint
 curl http://localhost:3000/api/catalog/navigation
@@ -672,8 +602,8 @@ const { navigation, featured } = await fetchNavigation();
 **Status:** ✅ **COMPLETE**
 
 **Components:**
-- ✅ Express server (`server.cjs`)
-- ✅ CORS middleware
+- ✅ Next.js (`app/api/**`)
+- ✅ CORS / headers per route
 - ✅ API route handlers
 - ✅ Error handling
 - ✅ JSON responses

@@ -15,7 +15,7 @@ import {
   FileText,
   AlertCircle
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 
 interface VendorWarehouseViewOnlyProps {
   vendorId: string;
@@ -74,7 +74,7 @@ export function VendorWarehouseViewOnly({ vendorId }: VendorWarehouseViewOnlyPro
   };
 
   const fetchRequests = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await dashboardClient
       .from('warehouse_requests')
       .select('*, warehouse_storage_plans(*)')
       .eq('vendor_id', vendorId)
@@ -84,7 +84,7 @@ export function VendorWarehouseViewOnly({ vendorId }: VendorWarehouseViewOnlyPro
   };
 
   const fetchInboundShipments = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await dashboardClient
       .from('warehouse_inbound_shipments')
       .select('*')
       .eq('vendor_id', vendorId)
@@ -94,7 +94,7 @@ export function VendorWarehouseViewOnly({ vendorId }: VendorWarehouseViewOnlyPro
   };
 
   const fetchWarehouseInventory = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await dashboardClient
       .from('warehouse_inventory')
       .select('*')
       .eq('vendor_id', vendorId)

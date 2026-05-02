@@ -9,7 +9,7 @@ Three simple APIs to power your storefront catalog.
 ## Base URL
 
 ```
-https://[your-supabase-project].supabase.co/functions/v1/
+https://<your-dashboard-host>/
 ```
 
 Replace `[your-supabase-project]` with your actual Supabase project ID.
@@ -22,7 +22,7 @@ Replace `[your-supabase-project]` with your actual Supabase project ID.
 
 ### Quick Example
 ```javascript
-fetch('https://your-project.supabase.co/functions/v1/get-catalog-navigation')
+fetch('https://your-dashboard.example.com/api/catalog/navigation')
   .then(res => res.json())
   .then(({ data }) => {
     // data.navigation = hierarchical menu tree
@@ -64,7 +64,7 @@ fetch('https://your-project.supabase.co/functions/v1/get-catalog-navigation')
 ### Quick Example
 ```javascript
 // Get hierarchical tree
-fetch('https://your-project.supabase.co/functions/v1/get-catalog-taxonomy')
+fetch('https://your-dashboard.example.com/api/catalog/taxonomy')
   .then(res => res.json())
   .then(({ data }) => {
     // data.tree = nested category tree
@@ -73,7 +73,7 @@ fetch('https://your-project.supabase.co/functions/v1/get-catalog-taxonomy')
   });
 
 // Get flat list for dropdowns
-fetch('https://your-project.supabase.co/functions/v1/get-catalog-taxonomy?flat=true')
+fetch('https://your-dashboard.example.com/api/catalog/taxonomy?flat=true')
   .then(res => res.json())
   .then(({ data }) => {
     // data.categories = simple array
@@ -125,7 +125,7 @@ fetch('https://your-project.supabase.co/functions/v1/get-catalog-taxonomy?flat=t
 ### Quick Example
 ```javascript
 // Get all facets
-fetch('https://your-project.supabase.co/functions/v1/get-catalog-facets')
+fetch('https://your-dashboard.example.com/api/catalog/facets')
   .then(res => res.json())
   .then(({ data }) => {
     // data.facet_groups = organized facets
@@ -135,7 +135,7 @@ fetch('https://your-project.supabase.co/functions/v1/get-catalog-facets')
 
 // Get facets for specific category
 const categoryId = 'your-category-uuid';
-fetch(`https://your-project.supabase.co/functions/v1/get-catalog-facets?category_id=${categoryId}`)
+fetch(`https://your-dashboard.example.com/api/catalog/facets?category_id=${categoryId}`)
   .then(res => res.json())
   .then(({ data }) => {
     // data.category_details.required = required facets
@@ -190,7 +190,7 @@ fetch(`https://your-project.supabase.co/functions/v1/get-catalog-facets?category
 ### Pattern 1: Build Main Navigation
 ```javascript
 async function buildNavigation() {
-  const res = await fetch('https://your-project.supabase.co/functions/v1/get-catalog-navigation');
+  const res = await fetch('https://your-dashboard.example.com/api/catalog/navigation');
   const { data } = await res.json();
 
   const nav = document.getElementById('main-nav');
@@ -206,7 +206,7 @@ async function buildNavigation() {
 ### Pattern 2: Category Dropdown for Product Form
 ```javascript
 async function populateCategoryDropdown() {
-  const res = await fetch('https://your-project.supabase.co/functions/v1/get-catalog-taxonomy');
+  const res = await fetch('https://your-dashboard.example.com/api/catalog/taxonomy');
   const { data } = await res.json();
 
   const select = document.getElementById('product-category');
@@ -224,7 +224,7 @@ async function populateCategoryDropdown() {
 ```javascript
 async function buildFilterSidebar(categoryId) {
   const res = await fetch(
-    `https://your-project.supabase.co/functions/v1/get-catalog-facets?category_id=${categoryId}`
+    `https://your-dashboard.example.com/api/catalog/facets?category_id=${categoryId}`
   );
   const { data } = await res.json();
 
@@ -289,7 +289,7 @@ class CatalogCache {
 
 // Usage
 const cache = new CatalogCache();
-const data = await cache.fetch('https://your-project.supabase.co/functions/v1/get-catalog-navigation');
+const data = await cache.fetch('https://your-dashboard.example.com/api/catalog/navigation');
 ```
 
 ---
@@ -300,21 +300,21 @@ const data = await cache.fetch('https://your-project.supabase.co/functions/v1/ge
 
 ```javascript
 // 1. Load navigation on page load
-const { data: nav } = await fetch('/functions/v1/get-catalog-navigation')
+const { data: nav } = await fetch('/api/catalog/navigation')
   .then(r => r.json());
 renderHeader(nav.navigation);
 renderFeaturedCategories(nav.featured);
 
 // 2. Category landing page
 const categorySlug = 'fashion';
-const { data: taxonomy } = await fetch('/functions/v1/get-catalog-taxonomy')
+const { data: taxonomy } = await fetch('/api/catalog/taxonomy')
   .then(r => r.json());
 const category = taxonomy.all_categories.find(c => c.slug === categorySlug);
 renderCategoryPage(category);
 
 // 3. Product listing with filters
 const { data: facets } = await fetch(
-  `/functions/v1/get-catalog-facets?category_id=${category.id}`
+  `/api/catalog/facets?category_id=${category.id}`
 ).then(r => r.json());
 renderFilterSidebar(facets.category_details);
 ```
@@ -349,7 +349,7 @@ class CatalogService {
 ```javascript
 // Show vendor which categories are available
 async function showAvailableCategories() {
-  const { data } = await fetch('/functions/v1/get-catalog-taxonomy')
+  const { data } = await fetch('/api/catalog/taxonomy')
     .then(r => r.json());
 
   // Show only leaf categories (can have products)
@@ -360,7 +360,7 @@ async function showAvailableCategories() {
 // Show required fields when vendor selects category
 async function onCategorySelected(categoryId) {
   const { data } = await fetch(
-    `/functions/v1/get-catalog-facets?category_id=${categoryId}`
+    `/api/catalog/facets?category_id=${categoryId}`
   ).then(r => r.json());
 
   const requiredFields = data.category_details.required;
@@ -401,7 +401,7 @@ function getCachedOrFetch(url, cacheKey, ttl = 3600000) {
 // Only fetch facets when user opens filter panel
 document.getElementById('filter-toggle').addEventListener('click', async () => {
   if (!facetsLoaded) {
-    const facets = await fetch('/functions/v1/get-catalog-facets')
+    const facets = await fetch('/api/catalog/facets')
       .then(r => r.json());
     renderFilters(facets.data);
     facetsLoaded = true;
@@ -412,7 +412,7 @@ document.getElementById('filter-toggle').addEventListener('click', async () => {
 ### 3. Use Flat Structure for Simple Lists
 ```javascript
 // Faster for dropdowns - no tree processing needed
-const { data } = await fetch('/functions/v1/get-catalog-taxonomy?flat=true')
+const { data } = await fetch('/api/catalog/taxonomy?flat=true')
   .then(r => r.json());
 data.categories.forEach(renderOption);
 ```
@@ -445,7 +445,7 @@ data.categories.forEach(renderOption);
 All APIs return consistent error format:
 
 ```javascript
-fetch('/functions/v1/get-catalog-navigation')
+fetch('/api/catalog/navigation')
   .then(res => res.json())
   .then(result => {
     if (!result.success) {

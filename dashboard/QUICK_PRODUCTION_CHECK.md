@@ -65,7 +65,7 @@ Health endpoint returns HTML?
    │  │        Test other endpoints
    │  │
    │  └─ NO → Check response format
-   │           Verify server.cjs is deployed
+   │           Verify Next.js is deployed
    │
    └─ Returns 404?
       │
@@ -88,7 +88,7 @@ Health endpoint returns HTML?
 2. Go to https://render.com
 3. New Web Service → Connect repo
 4. Render detects `render.yaml` automatically
-5. Add env vars: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+5. Add env vars: `NEXTAUTH_URL`, `AUTH_SECRET`
 6. Deploy
 7. Point DNS CNAME to Render URL
 
@@ -116,7 +116,7 @@ pm2 status
 # If not running
 cd /path/to/project
 npm run build
-pm2 start server.cjs --name vendor-dashboard
+pm2 start npm --name vendor-dashboard -- start
 
 # Check logs
 pm2 logs vendor-dashboard
@@ -195,7 +195,7 @@ fetch('https://vendor.sufisciencecenter.info/api/health')
 1. **Server logs:** `pm2 logs vendor-dashboard`
 2. **Restart server:** `pm2 restart vendor-dashboard`
 3. **Check environment:** `cat .env` (on server)
-4. **Test Supabase:** `curl -i ${SUPABASE_URL}/functions/v1/get-catalog-navigation`
+4. **Test Supabase:** `curl -i ${SUPABASE_URL}/api/catalog/navigation`
 
 ---
 

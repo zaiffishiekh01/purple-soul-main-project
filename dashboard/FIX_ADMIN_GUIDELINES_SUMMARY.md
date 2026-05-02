@@ -23,11 +23,11 @@
 
 ### Step 1: Run SQL Migration
 
-Open Supabase SQL Editor: https://supabase.com/dashboard/project/naesxujdffcmatntrlfr/sql/new
+Open Supabase SQL Editor: https://your-database-admin.example/sql/new
 
 Run this file:
 ```
-dashboard/supabase/migrations/20260410073200_fix_admin_creation_and_guidelines.sql
+dashboard/postgres/migrations/20260410073200_fix_admin_creation_and_guidelines.sql
 ```
 
 This creates/fixes:
@@ -45,18 +45,9 @@ cd D:\fyaz.2\purple\project\dashboard
 supabase functions deploy create-admin --project-ref naesxujdffcmatntrlfr
 ```
 
-**Option B: Manual Deployment** (recommended)
+**Option B: Deploy the dashboard app**
 
-1. Go to: https://supabase.com/dashboard/project/naesxujdffcmatntrlfr/edge
-2. Click on `create-admin` function
-3. Click "Edit" 
-4. Replace the code with the contents of:
-   ```
-   dashboard/supabase/functions/create-admin/index.ts
-   ```
-5. Click "Deploy"
-
-The key change: Added `'management'` to the `validRoles` array (line 83).
+Admin creation is handled in the Next.js app at `app/api/functions/[name]/route.ts` (branch `create-admin`). Deploy or run `npm run dev` for that route to be available—there is no separate Edge Function package under `dashboard/postgres/`.
 
 ---
 

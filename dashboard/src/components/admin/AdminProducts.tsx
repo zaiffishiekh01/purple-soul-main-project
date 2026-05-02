@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Package, Search, Eye, CreditCard as Edit2, X as XIcon, Check, CheckCircle, XCircle, AlertCircle, Power, Clock, ChevronDown } from 'lucide-react';
 import { useProducts } from '../../hooks/useProducts';
-import { supabase } from '../../lib/supabase';
+import { dashboardClient } from '../../lib/data-client';
 import { useAuth } from '../../contexts/AuthContext';
 
 type ApprovalFilter = 'all' | 'pending_review' | 'approved' | 'rejected' | 'deactivated';
@@ -62,7 +62,7 @@ export function AdminProducts() {
 
   const sendVendorNotification = async (vendorId: string, title: string, message: string, type: string) => {
     try {
-      await supabase.from('notifications').insert({
+      await dashboardClient.from('notifications').insert({
         vendor_id: vendorId,
         title,
         message,

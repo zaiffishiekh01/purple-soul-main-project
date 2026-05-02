@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { KeyRound, Eye, EyeOff } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 
 export function ResetPassword() {
   const router = useRouter();
@@ -32,7 +32,7 @@ export function ResetPassword() {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.updateUser({
+      const { error } = await dashboardClient.auth.updateUser({
         password: password
       });
 
@@ -41,9 +41,9 @@ export function ResetPassword() {
       setSuccess(true);
 
       // Check if user is admin to redirect correctly
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await dashboardClient.auth.getSession();
       if (session?.user) {
-        const { data: adminData } = await supabase
+        const { data: adminData } = await dashboardClient
           .from('admin_users')
           .select('id')
           .eq('user_id', session.user.id)

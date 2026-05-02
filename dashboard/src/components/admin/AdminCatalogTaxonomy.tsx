@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, ChevronRight, ChevronDown, Folder, FolderOpen, Save, X } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { dashboardClient } from '../../lib/data-client';
 
 interface Category {
   id: string;
@@ -39,7 +39,7 @@ export function AdminCatalogTaxonomy() {
 
   const loadCategories = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('categories')
         .select('*')
         .order('display_order');
@@ -92,7 +92,7 @@ export function AdminCatalogTaxonomy() {
 
   const handleCreate = async (parentId: string | null) => {
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('categories')
         .insert({
           parent_id: parentId,
@@ -113,7 +113,7 @@ export function AdminCatalogTaxonomy() {
     if (!editingCategory) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('categories')
         .update(formData)
         .eq('id', editingCategory.id);
@@ -132,7 +132,7 @@ export function AdminCatalogTaxonomy() {
     if (!confirm('Are you sure? This will also delete all subcategories.')) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('categories')
         .delete()
         .eq('id', categoryId);

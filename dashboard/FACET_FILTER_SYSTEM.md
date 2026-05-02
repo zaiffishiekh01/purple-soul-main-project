@@ -323,7 +323,7 @@ const { products, total } = await getProductsByFilters(
 
 ```typescript
 // Get applicable facet groups for a category
-const { data } = await supabase
+const { data } = await dashboardClient
   .from('category_facets')
   .select(`
     facet_group_id,
@@ -337,7 +337,7 @@ const { data } = await supabase
 
 ```typescript
 // Get all values for specific facet groups
-const { data } = await supabase
+const { data } = await dashboardClient
   .from('facet_values')
   .select('*')
   .in('facet_group_id', groupIds)
@@ -349,7 +349,7 @@ const { data } = await supabase
 
 ```typescript
 // Get facet values assigned to a product
-const { data } = await supabase
+const { data } = await dashboardClient
   .from('product_facets')
   .select('facet_value_id')
   .eq('product_id', productId);
@@ -359,7 +359,7 @@ const { data } = await supabase
 
 ```typescript
 // Get products matching selected facets
-const { data } = await supabase
+const { data } = await dashboardClient
   .from('products')
   .select(`
     *,
@@ -567,7 +567,7 @@ Consider caching:
 - `/src/components/StorefrontFilters.tsx`
 - `/src/hooks/useProductFacets.ts`
 - `/src/hooks/useStorefrontFilters.ts`
-- `/supabase/migrations/create_facet_filter_system.sql`
+- `/postgres/migrations/create_facet_filter_system.sql`
 
 ### Modified Files:
 - `/src/components/modals/ProductModal.tsx` (added facet selection)

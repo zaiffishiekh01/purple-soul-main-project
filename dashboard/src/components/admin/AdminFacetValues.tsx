@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Save, X, AlertCircle } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { dashboardClient } from '../../lib/data-client';
 
 interface FacetGroup {
   id: string;
@@ -42,7 +42,7 @@ export function AdminFacetValues() {
   const fetchGroups = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('facet_groups')
         .select('id, name, slug')
         .order('display_order');
@@ -62,7 +62,7 @@ export function AdminFacetValues() {
   const fetchValues = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('facet_values')
         .select('*, facet_group:facet_groups(id, name, slug)')
         .eq('facet_group_id', selectedGroup)
@@ -83,7 +83,7 @@ export function AdminFacetValues() {
     }
 
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('facet_values')
         .delete()
         .eq('id', id);
@@ -99,7 +99,7 @@ export function AdminFacetValues() {
 
   const handleToggleActive = async (id: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('facet_values')
         .update({ is_active: !currentStatus })
         .eq('id', id);
@@ -315,14 +315,14 @@ function FacetValueModal({ value, groupId, onClose, onSave }: FacetValueModalPro
 
     try {
       if (value) {
-        const { error } = await supabase
+        const { error } = await dashboardClient
           .from('facet_values')
           .update(formData)
           .eq('id', value.id);
 
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        const { error } = await dashboardClient
           .from('facet_values')
           .insert([formData]);
 

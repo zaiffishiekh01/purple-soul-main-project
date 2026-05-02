@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 
 export interface AdminPermissions {
   vendor_management: boolean;
@@ -21,6 +21,28 @@ export interface AdminUser {
   created_at: string;
 }
 
+/** Postgres `SELECT * FROM rpc(...)` returns one column named after the function, not a flat row. */
+function unwrapRpcJsonRow(row: unknown): AdminPermissions | null {
+  if (!row || typeof row !== 'object' || Array.isArray(row)) return null;
+  const obj = row as Record<string, unknown>;
+  if (typeof obj.is_super_admin === 'boolean' || typeof obj.vendor_management === 'boolean') {
+    return obj as unknown as AdminPermissions;
+  }
+  const values = Object.values(obj);
+  if (
+    values.length === 1 &&
+    values[0] !== null &&
+    typeof values[0] === 'object' &&
+    !Array.isArray(values[0])
+  ) {
+    const inner = values[0] as Record<string, unknown>;
+    if (typeof inner.is_super_admin === 'boolean' || typeof inner.vendor_management === 'boolean') {
+      return inner as unknown as AdminPermissions;
+    }
+  }
+  return null;
+}
+
 export function useAdminPermissions() {
   const [permissions, setPermissions] = useState<AdminPermissions>({
     vendor_management: false,
@@ -39,17 +61,13 @@ export function useAdminPermissions() {
 
   const fetchPermissions = async () => {
     try {
-      console.log('🔍 Fetching admin permissions...');
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await dashboardClient.auth.getUser();
       
       if (!user) {
-        console.warn('⚠️ No user found, skipping permissions fetch');
         return;
       }
 
-      console.log('👤 User ID:', user.id);
-
-      const { data, error } = await supabase.rpc('get_admin_permissions', {
+      const { data, error } = await dashboardClient.rpc('get_admin_permissions', {
         p_user_id: user.id
       });
 
@@ -58,12 +76,9 @@ export function useAdminPermissions() {
         throw error;
       }
 
-      console.log('✅ Admin permissions loaded:', data);
-
-      if (data) {
-        setPermissions(data as AdminPermissions);
-      } else {
-        console.warn('⚠️ get_admin_permissions returned null data');
+      const perms = data ? unwrapRpcJsonRow(data) ?? (data as AdminPermissions) : null;
+      if (perms) {
+        setPermissions(perms);
       }
     } catch (error: any) {
       console.error('❌ Error fetching admin permissions:', error);
@@ -103,7 +118,7 @@ export function useAdminManagement() {
 
   const fetchAdmins = async () => {
     try {
-      const { data: adminUsers, error: adminError } = await supabase
+      const { data: adminUsers, error: adminError } = await dashboardClient
         .from('admin_users')
         .select('*')
         .order('created_at', { ascending: false });
@@ -119,112 +134,48 @@ export function useAdminManagement() {
   };
 
   const createAdmin = async (email: string, password: string, roleName: string, permissions: Partial<AdminPermissions>) => {
-    try {
-      // Get the current session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !session?.user) {
-        throw new Error('Not authenticated. Please sign in again.');
-      }
+    const { data: { session } } = await dashboardClient.auth.getSession();
+    if (!session?.user) {
+      throw new Error('Not authenticated. Please sign in again.');
+    }
 
-      const currentUserId = session.user.id;
-      const originalSession = {
-        access_token: session.access_token,
-        refresh_token: session.refresh_token,
-      };
+    const { data: currentAdmin, error: adminCheckError } = await dashboardClient
+      .from('admin_users')
+      .select('is_super_admin, role')
+      .eq('user_id', session.user.id)
+      .maybeSingle();
 
-      console.log('🔍 Checking if current user is super admin...');
-      
-      // Check if current user is super admin
-      const { data: currentAdmin, error: adminCheckError } = await supabase
-        .from('admin_users')
-        .select('is_super_admin, role')
-        .eq('user_id', currentUserId)
-        .maybeSingle();
+    if (adminCheckError) {
+      throw new Error('Failed to verify your permissions.');
+    }
 
-      if (adminCheckError) {
-        console.error('❌ Error checking admin status:', adminCheckError);
-        throw new Error('Failed to verify your permissions.');
-      }
+    const isSuperAdmin = currentAdmin?.is_super_admin === true || currentAdmin?.role === 'super_admin';
+    if (!isSuperAdmin) {
+      throw new Error('You must be a Super Admin to create new admin users.');
+    }
 
-      const isSuperAdmin = currentAdmin?.is_super_admin === true || currentAdmin?.role === 'super_admin';
-      
-      if (!isSuperAdmin) {
-        throw new Error('You must be a Super Admin to create new admin users.');
-      }
-
-      console.log('✅ Super admin verified. Creating admin account...');
-
-      // Step 1: Create the auth user (this will change the session!)
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+    await dashboardClient.functions.invoke('create-admin', {
+      body: {
         email,
         password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/admin/dashboard`,
+        roleName,
+        permissions: {
+          vendor_management: permissions.vendor_management ?? false,
+          order_management: permissions.order_management ?? false,
+          product_management: permissions.product_management ?? false,
+          finance_management: permissions.finance_management ?? false,
+          analytics_monitoring: permissions.analytics_monitoring ?? false,
         },
-      });
+      },
+    });
 
-      // CRITICAL: Immediately restore the original session!
-      // signUp() automatically logs in as the new user, so we must switch back
-      await supabase.auth.setSession(originalSession);
-      console.log('✅ Session restored to original user');
-
-      if (signUpError) {
-        console.error('❌ Sign up error:', signUpError);
-        if (signUpError.message.includes('already been registered')) {
-          throw new Error(`An account with email "${email}" already exists. Please use a different email or delete the existing account first.`);
-        }
-        throw new Error(`Failed to create user account: ${signUpError.message}`);
-      }
-
-      const newUserId = signUpData?.user?.id;
-      
-      if (!newUserId) {
-        throw new Error('No user returned from sign up.');
-      }
-
-      console.log('✅ Auth user created:', newUserId);
-      console.log('🔧 Creating admin record via database function...');
-
-      // Step 2: Create the admin_users record using the SECURITY DEFINER function
-      // This bypasses RLS policies
-      const { data: newAdmin, error: callError } = await supabase.rpc('create_admin_user_bypass', {
-        p_user_id: newUserId,
-        p_email: email,
-        p_role: roleName,
-        p_is_super_admin: roleName === 'super_admin',
-        p_permissions: {
-          vendor_management: permissions?.vendor_management || false,
-          order_management: permissions?.order_management || false,
-          product_management: permissions?.product_management || false,
-          finance_management: permissions?.finance_management || false,
-          analytics_monitoring: permissions?.analytics_monitoring || false,
-        },
-      });
-
-      if (callError || !newAdmin) {
-        console.error('❌ Failed to create admin record:', callError);
-        throw new Error(`Failed to create admin record: ${callError?.message || 'Unknown error'}`);
-      }
-
-      if (newAdmin?.error) {
-        throw new Error(newAdmin.error);
-      }
-
-      console.log('✅ Admin created successfully:', newAdmin);
-
-      // Refresh the admin list
-      await fetchAdmins();
-      return { success: true };
-    } catch (error: any) {
-      console.error('❌ Error creating admin:', error);
-      throw error;
-    }
+    await fetchAdmins();
+    return { success: true };
   };
 
   const updateAdminRole = async (adminId: string, roleName: string, permissions: Partial<AdminPermissions>) => {
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('admin_users')
         .update({
           role: roleName,
@@ -252,22 +203,15 @@ export function useAdminManagement() {
   const deleteAdmin = async (adminId: string, userId: string) => {
     try {
       // Delete from admin_users table
-      const { error: adminError } = await supabase
+      const { error: adminError } = await dashboardClient
         .from('admin_users')
         .delete()
         .eq('id', adminId);
 
       if (adminError) throw adminError;
 
-      // Get session token for edge function call
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      // Delete auth user via edge function
-      const { error: deleteError } = await supabase.functions.invoke('delete-admin-user', {
+      const { error: deleteError } = await dashboardClient.functions.invoke('delete-admin-user', {
         body: { userId },
-        headers: session?.access_token ? {
-          Authorization: `Bearer ${session.access_token}`,
-        } : undefined,
       });
 
       if (deleteError) {

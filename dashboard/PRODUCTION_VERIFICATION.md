@@ -184,7 +184,7 @@ docker ps | grep vendor-dashboard
 
 **Node.js Hosting (Render, Railway, Fly, VPS):**
 - Should work out of the box
-- Verify `server.cjs` is the start command
+- Verify `Next.js` is the start command
 - Check logs for errors
 
 ---
@@ -269,7 +269,7 @@ npm run build
 npm install -g pm2
 
 # Start server
-pm2 start server.cjs --name vendor-dashboard
+pm2 start npm --name vendor-dashboard -- start
 pm2 save
 pm2 startup
 
@@ -290,7 +290,7 @@ export default function handler(req, res) {
 
 // api/catalog/navigation.js
 export default async function handler(req, res) {
-  const response = await fetch(`${process.env.SUPABASE_URL}/functions/v1/get-catalog-navigation`, {
+  const response = await fetch(`${process.env.SUPABASE_URL}/api/catalog/navigation`, {
     headers: { Authorization: `Bearer ${process.env.SUPABASE_ANON_KEY}` }
   });
   const data = await response.json();
@@ -308,7 +308,7 @@ exports.handler = async () => ({
 
 // netlify/functions/catalog-navigation.js
 exports.handler = async () => {
-  const response = await fetch(`${process.env.SUPABASE_URL}/functions/v1/get-catalog-navigation`, {
+  const response = await fetch(`${process.env.SUPABASE_URL}/api/catalog/navigation`, {
     headers: { Authorization: `Bearer ${process.env.SUPABASE_ANON_KEY}` }
   });
   const data = await response.json();
@@ -358,7 +358,7 @@ access-control-allow-methods: GET, OPTIONS
 access-control-allow-headers: Content-Type, Authorization
 ```
 
-If missing, check `server.cjs` has:
+If missing, check `Next.js` has:
 ```javascript
 app.use(cors({
   origin: '*',
@@ -489,8 +489,8 @@ echo "1. Click 'New +' → 'Web Service'"
 echo "2. Connect your GitHub repository"
 echo "3. Render will detect render.yaml automatically"
 echo "4. Add environment variables in Render dashboard:"
-echo "   - VITE_SUPABASE_URL"
-echo "   - VITE_SUPABASE_ANON_KEY"
+echo "   - NEXTAUTH_URL"
+echo "   - AUTH_SECRET"
 echo "5. Click 'Create Web Service'"
 echo ""
 echo "6. Once deployed, configure DNS:"
@@ -525,8 +525,8 @@ If issues persist:
    cat .env
 
    # Verify Supabase credentials work
-   curl -i "${VITE_SUPABASE_URL}/functions/v1/get-catalog-navigation" \
-     -H "Authorization: Bearer ${VITE_SUPABASE_ANON_KEY}"
+   curl -i "${NEXTAUTH_URL}/api/catalog/navigation" \
+     -H "Authorization: Bearer ${AUTH_SECRET}"
    ```
 
 3. **Test locally:**
@@ -559,7 +559,7 @@ curl -f https://vendor.sufisciencecenter.info/api/health && echo "✅ Server is 
 **For a working production deployment, you MUST have:**
 
 1. ✅ Node.js runtime (not static hosting)
-2. ✅ `server.cjs` as the start command
+2. ✅ `Next.js` as the start command
 3. ✅ Environment variables configured
 4. ✅ Domain routing `/api/*` to Node.js server
 5. ✅ CORS enabled in Express configuration

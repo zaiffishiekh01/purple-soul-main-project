@@ -26,8 +26,8 @@ npm install
 
 Create `.env` file:
 ```bash
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key-here
+NEXTAUTH_URL=https://your-dashboard.example.com
+AUTH_SECRET=your-anon-key-here
 PORT=3000
 ```
 
@@ -69,10 +69,7 @@ Or use the automated test script:
 
 #### Deploy Steps
 
-1. **Upload files to server:**
-   ```bash
-   scp -r dist/ server.cjs package.json .env user@your-server.com:/var/www/vendor-dashboard/
-   ```
+1. **Upload the application tree** (or deploy from git on the server), including `app/`, `src/`, `package.json`, `next.config.ts`, `public/`, etc.
 
 2. **SSH into server:**
    ```bash
@@ -80,14 +77,15 @@ Or use the automated test script:
    cd /var/www/vendor-dashboard
    ```
 
-3. **Install dependencies:**
+3. **Install dependencies and build:**
    ```bash
-   npm install express cors dotenv
+   npm ci
+   npm run build
    ```
 
 4. **Start server:**
    ```bash
-   node server.cjs
+   npm run start
    ```
 
 #### Using PM2 (Recommended)
@@ -97,7 +95,7 @@ Or use the automated test script:
 npm install -g pm2
 
 # Start the app
-pm2 start server.cjs --name vendor-dashboard
+pm2 start npm --name vendor-dashboard -- start
 
 # Configure auto-restart on reboot
 pm2 startup
@@ -124,7 +122,7 @@ User=www-data
 WorkingDirectory=/var/www/vendor-dashboard
 Environment="NODE_ENV=production"
 EnvironmentFile=/var/www/vendor-dashboard/.env
-ExecStart=/usr/bin/node /var/www/vendor-dashboard/server.cjs
+ExecStart=/usr/bin/npm --prefix /var/www/vendor-dashboard run start
 Restart=on-failure
 
 [Install]
@@ -203,23 +201,24 @@ npm install -g vercel
   "version": 2,
   "builds": [
     {
-      "src": "server.cjs",
+      "src": "Next.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/catalog/(.*)",
-      "dest": "/server.cjs"
+      "dest": "/Next.js"
     },
     {
       "src": "/(.*)",
-      "dest": "/server.cjs"
+      "dest": "/Next.js"
     }
   ],
   "env": {
-    "VITE_SUPABASE_URL": "@vite-supabase-url",
-    "VITE_SUPABASE_ANON_KEY": "@vite-supabase-anon-key"
+    "NEXTAUTH_URL": "@nextauth-url",
+    "AUTH_SECRET": "@auth-secret",
+    "DATABASE_URL": "@database-url"
   }
 }
 ```
@@ -227,8 +226,8 @@ npm install -g vercel
 #### Step 3: Add Environment Variables
 
 ```bash
-vercel env add VITE_SUPABASE_URL
-vercel env add VITE_SUPABASE_ANON_KEY
+vercel env add NEXTAUTH_URL
+vercel env add AUTH_SECRET
 ```
 
 #### Step 4: Deploy
@@ -252,13 +251,13 @@ services:
     name: vendor-dashboard
     env: node
     buildCommand: npm install && npm run build
-    startCommand: node server.cjs
+    startCommand: npm run start
     envVars:
       - key: NODE_VERSION
         value: "22"
-      - key: VITE_SUPABASE_URL
+      - key: NEXTAUTH_URL
         sync: false
-      - key: VITE_SUPABASE_ANON_KEY
+      - key: AUTH_SECRET
         sync: false
     healthCheckPath: /api/catalog/navigation
 ```
@@ -290,8 +289,9 @@ railway login
 railway init
 
 # Add environment variables
-railway variables set VITE_SUPABASE_URL=https://your-project.supabase.co
-railway variables set VITE_SUPABASE_ANON_KEY=your-key
+railway variables set DATABASE_URL="postgresql://..."
+railway variables set NEXTAUTH_URL=https://your-dashboard.example.com
+railway variables set AUTH_SECRET=your-key
 
 # Deploy
 railway up
@@ -303,36 +303,9 @@ railway up
 
 **Best for:** Consistent deployments, Kubernetes, cloud platforms
 
-#### Create `Dockerfile`
+#### Dockerfile
 
-```dockerfile
-FROM node:22-alpine
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm install express cors dotenv
-
-COPY dist ./dist
-COPY server.cjs ./
-
-EXPOSE 3000
-
-CMD ["node", "server.cjs"]
-```
-
-#### Create `.dockerignore`
-
-```
-node_modules
-npm-debug.log
-.env
-.git
-.gitignore
-*.md
-src
-public
-```
+Use the **`Dockerfile`** at the root of this `dashboard` package (Next.js `output: 'standalone'`). Do not copy the obsolete Express + `dist/` pattern.
 
 #### Build and Run
 
@@ -344,8 +317,8 @@ docker build -t vendor-dashboard .
 docker run -d \
   --name vendor-dashboard \
   -p 3000:3000 \
-  -e VITE_SUPABASE_URL="https://your-project.supabase.co" \
-  -e VITE_SUPABASE_ANON_KEY="your-key" \
+  -e NEXTAUTH_URL="https://your-dashboard.example.com" \
+  -e AUTH_SECRET="your-key" \
   vendor-dashboard
 
 # Check logs
@@ -367,8 +340,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
-      - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - AUTH_SECRET=${AUTH_SECRET}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/catalog/navigation"]
@@ -390,8 +363,8 @@ Required variables in `.env`:
 
 ```bash
 # Supabase Configuration (Required)
-VITE_SUPABASE_URL=https://xxxxx.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+NEXTAUTH_URL=https://your-dashboard.example.com
+AUTH_SECRET=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 # Server Configuration (Optional)
 PORT=3000
@@ -479,7 +452,7 @@ journalctl -u vendor-dashboard -f
 docker logs -f vendor-dashboard
 
 # Direct node (save to file)
-node server.cjs >> logs/app.log 2>&1
+npm run start >> logs/app.log 2>&1
 ```
 
 ---
@@ -496,7 +469,7 @@ lsof -i :3000
 kill -9 <PID>
 
 # Or use different port
-PORT=3001 node server.cjs
+PORT=3001 npm run start
 ```
 
 ### Issue: Permission Denied
@@ -534,7 +507,7 @@ sudo nginx -t
 
 **Cause:** React Router catching the route
 
-**Solution:** Ensure API routes are defined BEFORE static file serving in `server.cjs`
+**Solution:** Ensure API routes are defined BEFORE static file serving in `Next.js`
 
 ### Issue: CORS Errors
 
@@ -552,7 +525,7 @@ sudo nginx -t
 npm install compression
 ```
 
-Update `server.cjs`:
+Update `Next.js`:
 ```javascript
 const compression = require('compression');
 app.use(compression());
@@ -564,7 +537,7 @@ app.use(compression());
 npm install express-rate-limit
 ```
 
-Update `server.cjs`:
+Update `Next.js`:
 ```javascript
 const rateLimit = require('express-rate-limit');
 
@@ -617,7 +590,7 @@ cp .env .env.backup
 tar -czf dist-backup-$(date +%Y%m%d).tar.gz dist/
 
 # Backup server script
-cp server.cjs server.cjs.backup
+cp Next.js Next.js.backup
 ```
 
 ### Restore
@@ -639,7 +612,7 @@ Run multiple instances behind a load balancer:
 
 ```bash
 # Start multiple instances
-pm2 start server.cjs -i 4 --name vendor-dashboard
+pm2 start npm --name vendor-dashboard -- start -i 4 --name vendor-dashboard
 ```
 
 ### Load Balancer (Nginx)
@@ -699,7 +672,7 @@ jobs:
           echo "$SSH_PRIVATE_KEY" > key.pem
           chmod 600 key.pem
           rsync -avz -e "ssh -i key.pem -o StrictHostKeyChecking=no" \
-            dist/ server.cjs package.json \
+            dist/ Next.js package.json \
             $SERVER_USER@$SERVER_HOST:/var/www/vendor-dashboard/
           ssh -i key.pem $SERVER_USER@$SERVER_HOST \
             "cd /var/www/vendor-dashboard && npm install && pm2 restart vendor-dashboard"

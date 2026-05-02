@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { FinanceManagement } from './FinanceManagement';
 import { FeeWaiverSection } from './FeeWaiverSection';
 import { useTransactions } from '../hooks/useTransactions';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 import { useAuth } from '../contexts/AuthContext';
 
 interface PayoutSettings {
@@ -34,7 +34,7 @@ export function FinanceManagementContainer() {
 
   const fetchPayoutSettings = async () => {
     try {
-      const { data: vendorData } = await supabase
+      const { data: vendorData } = await dashboardClient
         .from('vendors')
         .select('id')
         .eq('user_id', userId)
@@ -44,7 +44,7 @@ export function FinanceManagementContainer() {
 
       setVendorId(vendorData.id);
 
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('payout_settings')
         .select('*')
         .eq('vendor_id', vendorData.id)
@@ -66,7 +66,7 @@ export function FinanceManagementContainer() {
           auto_payout_enabled: true,
         };
 
-        const { data: created, error: createError } = await supabase
+        const { data: created, error: createError } = await dashboardClient
           .from('payout_settings')
           .insert(newSettings)
           .select()
@@ -86,7 +86,7 @@ export function FinanceManagementContainer() {
     if (!payoutSettings) return;
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('payout_settings')
         .update(updates)
         .eq('id', payoutSettings.id)

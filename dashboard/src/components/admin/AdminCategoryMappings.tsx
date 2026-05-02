@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link2, Save, Trash2 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { dashboardClient } from '../../lib/data-client';
 
 interface Category {
   id: string;
@@ -40,9 +40,9 @@ export function AdminCategoryMappings() {
   const loadData = async () => {
     try {
       const [categoriesRes, groupsRes, mappingsRes] = await Promise.all([
-        supabase.from('categories').select('*').order('name'),
-        supabase.from('category_groups').select('*').order('name'),
-        supabase
+        dashboardClient.from('categories').select('*').order('name'),
+        dashboardClient.from('category_groups').select('*').order('name'),
+        dashboardClient
           .from('category_group_mappings')
           .select(`
             id,
@@ -74,7 +74,7 @@ export function AdminCategoryMappings() {
     }
 
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('category_group_mappings')
         .insert({
           category_id: selectedCategory,
@@ -100,7 +100,7 @@ export function AdminCategoryMappings() {
     if (!confirm('Remove this mapping?')) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('category_group_mappings')
         .delete()
         .eq('id', mappingId);

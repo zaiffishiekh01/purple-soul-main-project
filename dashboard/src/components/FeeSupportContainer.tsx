@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FeeWaiverSection } from './FeeWaiverSection';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 import { useAuth } from '../contexts/AuthContext';
 
 export function FeeSupportContainer() {
@@ -16,7 +16,7 @@ export function FeeSupportContainer() {
 
   const fetchVendorId = async () => {
     try {
-      const { data: vendorData } = await supabase
+      const { data: vendorData } = await dashboardClient
         .from('vendors')
         .select('id')
         .eq('user_id', user?.id)

@@ -25,13 +25,13 @@ supabase functions deploy create-admin --project-ref naesxujdffcmatntrlfr
 **After deploying, set required secrets:**
 ```bash
 supabase secrets set \
-  SUPABASE_URL=https://naesxujdffcmatntrlfr.supabase.co \
+  SUPABASE_URL=https://your-dashboard.example.com \
   SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY \
   --project-ref naesxujdffcmatntrlfr
 ```
 
 Find your service role key at:
-https://supabase.com/dashboard/project/naesxujdffcmatntrlfr/settings/api
+https://your-database-admin.example/settings/api
 
 ---
 
@@ -76,17 +76,17 @@ INSERT INTO admin_users (
 
 ### Option 3: Deploy via Supabase Dashboard (No CLI Required)
 
-1. Go to https://supabase.com/dashboard/project/naesxujdffcmatntrlfr
+1. Go to https://your-database-admin.example
 2. Click **Edge Functions** in the left sidebar
 3. Click **New Function**
-4. Copy the contents of `dashboard/supabase/functions/create-admin/index.ts`
+4. Confirm `dashboard/app/api/functions/[name]/route.ts` includes the `create-admin` branch (current source of truth).
 5. Name it `create-admin`
 6. Deploy it
 
 **Then set the secrets:**
 1. Go to **Project Settings** → **Edge Functions** → **Secrets**
 2. Add:
-   - `SUPABASE_URL` = `https://naesxujdffcmatntrlfr.supabase.co`
+   - `SUPABASE_URL` = `https://your-dashboard.example.com`
    - `SUPABASE_SERVICE_ROLE_KEY` = (your service role key from API settings)
 
 ---

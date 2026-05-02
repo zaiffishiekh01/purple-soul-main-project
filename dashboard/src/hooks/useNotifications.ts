@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useContext, useMemo } from 'react';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 import { Notification } from '../types';
 import { VendorContext } from '../contexts/VendorContext';
 
@@ -21,7 +21,7 @@ export function useNotifications() {
 
       try {
         setLoading(true);
-        const { data, error } = await supabase
+        const { data, error } = await dashboardClient
           .from('notifications')
           .select('*')
           .eq('vendor_id', vendorId)
@@ -41,7 +41,7 @@ export function useNotifications() {
   }, [vendorId]);
 
   const markAsRead = useCallback(async (id: string) => {
-    const { error } = await supabase
+    const { error } = await dashboardClient
       .from('notifications')
       .update({ is_read: true })
       .eq('id', id);
@@ -56,7 +56,7 @@ export function useNotifications() {
   const markAllAsRead = useCallback(async () => {
     if (!vendorId) return;
 
-    const { error } = await supabase
+    const { error } = await dashboardClient
       .from('notifications')
       .update({ is_read: true })
       .eq('vendor_id', vendorId)
@@ -68,7 +68,7 @@ export function useNotifications() {
   }, [vendorId]);
 
   const deleteNotification = useCallback(async (id: string) => {
-    const { error } = await supabase.from('notifications').delete().eq('id', id);
+    const { error } = await dashboardClient.from('notifications').delete().eq('id', id);
     if (error) throw error;
 
     setNotifications((prev) => prev.filter((n) => n.id !== id));
@@ -79,7 +79,7 @@ export function useNotifications() {
 
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await dashboardClient
         .from('notifications')
         .select('*')
         .eq('vendor_id', vendorId)

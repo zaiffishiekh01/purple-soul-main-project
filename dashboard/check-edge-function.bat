@@ -1,15 +1,15 @@
 @echo off
-REM Check if create-admin edge function is deployed
-echo 🔍 Checking if create-admin edge function is deployed...
+echo ============================================
+echo Legacy helper (Supabase Edge removed)
+echo ============================================
 echo.
-echo To check, run:
-echo   supabase functions list --project-ref naesxujdffcmatntrlfr
+echo create-admin is implemented in the Next.js app:
+echo   POST /api/functions/create-admin
+echo   (see app\api\functions\[name]\route.ts)
 echo.
-echo To deploy the function, run:
-echo   cd dashboard
-echo   supabase functions deploy create-admin --project-ref naesxujdffcmatntrlfr
-echo.
-echo To view function logs, run:
-echo   supabase functions logs create-admin --project-ref naesxujdffcmatntrlfr
+echo Verify the running app:
+echo   1. npm run dev
+echo   2. npm run smoke:api
+echo   3. Sign in as super admin and use Admin UI to create admins
 echo.
 pause

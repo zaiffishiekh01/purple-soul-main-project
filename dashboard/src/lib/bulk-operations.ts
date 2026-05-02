@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { dashboardClient } from './data-client';
 
 export async function bulkUpdateOrderStatus(
   orderIds: string[],
@@ -9,7 +9,7 @@ export async function bulkUpdateOrderStatus(
 
   for (const orderId of orderIds) {
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('orders')
         .update({ status })
         .eq('id', orderId);
@@ -33,7 +33,7 @@ export async function bulkDeleteProducts(
 
   for (const productId of productIds) {
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('products')
         .delete()
         .eq('id', productId);
@@ -58,7 +58,7 @@ export async function bulkUpdateProductStatus(
 
   for (const productId of productIds) {
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('products')
         .update({ status })
         .eq('id', productId);
@@ -83,7 +83,7 @@ export async function bulkUpdateProductPrices(
 
   for (const productId of productIds) {
     try {
-      const { data: product } = await supabase
+      const { data: product } = await dashboardClient
         .from('products')
         .select('price')
         .eq('id', productId)
@@ -102,7 +102,7 @@ export async function bulkUpdateProductPrices(
 
       newPrice = Math.max(0, newPrice);
 
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('products')
         .update({ price: newPrice })
         .eq('id', productId);
@@ -136,7 +136,7 @@ export async function bulkImportProducts(
 
   for (const product of products) {
     try {
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('products')
         .insert({ ...product, vendor_id: vendorId });
 
@@ -160,7 +160,7 @@ export async function bulkRestockInventory(
 
   for (const update of updates) {
     try {
-      const { data: current } = await supabase
+      const { data: current } = await dashboardClient
         .from('inventory')
         .select('quantity')
         .eq('id', update.inventoryId)
@@ -168,7 +168,7 @@ export async function bulkRestockInventory(
 
       if (!current) throw new Error('Inventory item not found');
 
-      const { error } = await supabase
+      const { error } = await dashboardClient
         .from('inventory')
         .update({
           quantity: current.quantity + update.quantity,

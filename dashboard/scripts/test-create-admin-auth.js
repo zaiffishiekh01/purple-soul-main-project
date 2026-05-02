@@ -1,98 +1,68 @@
 /**
- * Quick diagnostic test for create-admin edge function
- * Paste this in your browser console when on the admin dashboard page
+ * Browser-console diagnostic for the create-admin API route.
+ *
+ * Usage: open the admin dashboard (signed in as super admin), DevTools → Console,
+ * paste this file’s contents and press Enter.
+ *
+ * Expects same-origin session cookies (NextAuth) and POST /api/functions/create-admin.
  */
+(async function testCreateAdminAuth() {
+  console.log('Testing create-admin (Next.js API route)…\n');
 
-async function testCreateAdminAuth() {
-  console.log('🔍 Testing create-admin authentication...\n');
-  
-  // Test 1: Check session
-  const { data: { session }, error: sessionError } = await window.supabase.auth.getSession();
-  
-  console.log('1️⃣ Session Check:');
-  console.log('   Has session:', !!session);
-  console.log('   Has token:', !!session?.access_token);
-  console.log('   Session error:', sessionError);
-  console.log('   Token expiry:', session?.expires_at ? new Date(session.expires_at * 1000).toLocaleString() : 'N/A');
-  console.log('   Is expired:', session?.expires_at ? Date.now() > session.expires_at * 1000 : 'N/A');
-  
-  if (!session?.access_token) {
-    console.error('❌ No valid session. Please sign in.');
+  const sessionRes = await fetch('/api/auth/session', { credentials: 'include' });
+  const sessionText = await sessionRes.text();
+  let sessionJson = null;
+  try {
+    sessionJson = sessionText && sessionText !== 'null' ? JSON.parse(sessionText) : null;
+  } catch (e) {
+    console.error('Failed to parse /api/auth/session:', e);
     return;
   }
-  
-  console.log('\n2️⃣ Token Validation:');
-  const token = session.access_token;
-  console.log('   Token length:', token.length);
-  console.log('   Token preview:', token.substring(0, 50) + '...');
-  
-  // Decode JWT to check expiry
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const isExpired = Date.now() / 1000 > payload.exp;
-    console.log('   Token issued at:', new Date(payload.iat * 1000).toLocaleString());
-    console.log('   Token expires at:', new Date(payload.exp * 1000).toLocaleString());
-    console.log('   Is expired:', isExpired);
-    console.log('   User ID:', payload.sub);
-  } catch (e) {
-    console.error('   ❌ Failed to decode token:', e);
-  }
-  
-  // Test 3: Try edge function with explicit headers
-  console.log('\n3️⃣ Testing Edge Function Call:');
-  console.log('   URL:', `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-admin`);
-  
-  try {
-    const response = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-admin`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          email: 'test-diagnostic@example.com',
-          password: 'test123456',
-          roleName: 'admin',
-          permissions: {
-            vendor_management: false,
-            order_management: false,
-            product_management: false,
-            finance_management: false,
-            analytics_monitoring: false,
-          }
-        })
-      }
-    );
-    
-    console.log('   Response status:', response.status);
-    console.log('   Response status text:', response.statusText);
-    
-    const responseText = await response.text();
-    console.log('   Response body:', responseText);
-    
-    if (response.ok) {
-      console.log('✅ Edge function call succeeded!');
-    } else {
-      console.error('❌ Edge function failed with status:', response.status);
-      
-      if (response.status === 401) {
-        console.error('\n🔑 AUTHENTICATION ISSUE DETECTED');
-        console.error('Possible causes:');
-        console.error('  1. Edge function not deployed');
-        console.error('  2. SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set in edge function secrets');
-        console.error('  3. Token is valid but edge function can\'t validate it');
-        console.error('\nRun these commands to fix:');
-        console.error('  cd dashboard');
-        console.error('  supabase functions deploy create-admin');
-        console.error('  supabase secrets set SUPABASE_URL=<your_url> SUPABASE_SERVICE_ROLE_KEY=<your_key>');
-      }
-    }
-  } catch (error) {
-    console.error('❌ Fetch error:', error);
-  }
-}
 
-// Run the test
-testCreateAdminAuth();
+  const user = sessionJson?.user;
+  console.log('1) Session');
+  console.log('   Signed in:', !!(user?.id && user?.email));
+  console.log('   User id:', user?.id ?? '(none)');
+  console.log('   Email:', user?.email ?? '(none)');
+
+  if (!user?.id) {
+    console.error('No session. Sign in as a super admin first.');
+    return;
+  }
+
+  const url = '/api/functions/create-admin';
+  const body = {
+    email: `test-diagnostic-${Date.now()}@example.com`,
+    password: 'TempPass123!ChangeMe',
+    roleName: 'admin',
+    permissions: {
+      vendor_management: false,
+      order_management: false,
+      product_management: false,
+      finance_management: false,
+      analytics_monitoring: false,
+    },
+  };
+
+  console.log('\n2) POST', url);
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const text = await response.text();
+    console.log('   Status:', response.status, response.statusText);
+    console.log('   Body:', text);
+    if (response.ok) {
+      console.log('\nOK: route responded successfully (check DB for the new user).');
+    } else if (response.status === 401 || response.status === 403) {
+      console.error('\nAuth/permission issue: must be super admin; route may also enforce server-side checks.');
+    } else {
+      console.error('\nRequest failed; see body above.');
+    }
+  } catch (err) {
+    console.error('Fetch error:', err);
+  }
+})();

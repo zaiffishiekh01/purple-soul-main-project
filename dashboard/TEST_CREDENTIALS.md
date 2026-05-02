@@ -110,7 +110,7 @@ All vendor accounts are in **pending approval** status. Admin must approve them 
 ## Database Information
 
 - **Database:** Supabase PostgreSQL
-- **URL:** `https://iqyfllnizpfpoomqbeut.supabase.co`
+- **URL:** `https://your-dashboard.example.com`
 - **Test Data:**
   - 4 vendor accounts awaiting approval
   - Sample products, orders, and transactions
@@ -122,7 +122,7 @@ All vendor accounts are in **pending approval** status. Admin must approve them 
 
 ### Create New Vendor (using Edge Function):
 ```bash
-curl -X POST "https://iqyfllnizpfpoomqbeut.supabase.co/functions/v1/create-vendor" \
+curl -X POST "https://your-dashboard.example.com/api/functions/create-vendor" \
   -H "Content-Type: application/json" \
   -d '{
     "email": "newvendor@example.com",

@@ -1,21 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { LogIn, UserPlus, ArrowLeft, Eye, EyeOff, KeyRound, Shield, Clock, CheckCircle, Send } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
-
-const DEV_QUICK_LOGIN = {
-  vendor: {
-    email: 'test.vendor@purple-soul.com',
-    password: 'VendorTest123!',
-  },
-  admin: {
-    email: 'fk.envcal@gmail.com',
-    password: 'Admin123!',
-  },
-} as const;
+import { dashboardClient } from '../lib/data-client';
 
 function AdminRequestAccess({ onBack }: { onBack: () => void }) {
   const [email, setEmail] = useState('');
@@ -30,7 +19,7 @@ function AdminRequestAccess({ onBack }: { onBack: () => void }) {
     setError('');
     setLoading(true);
     try {
-      const { error: insertError } = await supabase
+      const { error: insertError } = await dashboardClient
         .from('admin_access_requests')
         .insert({ email, full_name: name, reason, status: 'pending' });
       if (insertError) throw insertError;
@@ -142,6 +131,8 @@ export function Auth() {
   const params = useParams<{ role: string }>();
   const role = params?.role as 'vendor' | 'admin' | undefined;
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const justRegistered = searchParams.get('registered') === '1';
   const [isSignUp, setIsSignUp] = useState(false);
   const [showAdminRequest, setShowAdminRequest] = useState(false);
   const [email, setEmail] = useState('');
@@ -152,11 +143,9 @@ export function Auth() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetSuccess, setResetSuccess] = useState(false);
-  const [signUpSuccess, setSignUpSuccess] = useState(false);
   const { signIn, signUp, resetPassword } = useAuth();
 
   const isAdmin = role === 'admin';
-  const isDev = process.env.NODE_ENV === 'development';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,8 +155,11 @@ export function Auth() {
     try {
       if (isSignUp) {
         await signUp(email, password);
-        setSignUpSuccess(true);
+        if (!isAdmin) {
+          router.replace('/');
+        }
         setLoading(false);
+        return;
       } else {
         const { isAdmin: userIsAdmin } = await signIn(email, password);
         if (userIsAdmin) {
@@ -194,27 +186,6 @@ export function Auth() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDevQuickLogin = async () => {
-    const creds = isAdmin ? DEV_QUICK_LOGIN.admin : DEV_QUICK_LOGIN.vendor;
-    setEmail(creds.email);
-    setPassword(creds.password);
-    setError('');
-    setLoading(true);
-
-    try {
-      const { isAdmin: userIsAdmin } = await signIn(creds.email, creds.password);
-      if (userIsAdmin) {
-        router.replace('/admin/dashboard');
-      } else {
-        router.replace('/vendor/dashboard');
-      }
-    } catch (err) {
-      console.error('Dev quick login error:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred');
       setLoading(false);
     }
   };
@@ -248,30 +219,6 @@ export function Auth() {
 
           {isAdmin && showAdminRequest ? (
             <AdminRequestAccess onBack={() => setShowAdminRequest(false)} />
-          ) : signUpSuccess && !isAdmin ? (
-            <div className="text-center py-4">
-              <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-8 h-8 text-emerald-600" />
-              </div>
-              <h2 className="text-xl font-bold text-slate-800 mb-2">Account Created</h2>
-              <p className="text-slate-600 text-sm mb-2">
-                Your vendor account has been created and is <strong>pending approval</strong> from our admin team.
-              </p>
-              <p className="text-slate-500 text-sm mb-6">
-                You can sign in now to check your approval status. You'll receive access once an admin approves your account.
-              </p>
-              <button
-                onClick={() => {
-                  setSignUpSuccess(false);
-                  setIsSignUp(false);
-                  setEmail('');
-                  setPassword('');
-                }}
-                className="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors text-sm font-medium"
-              >
-                Sign In Now
-              </button>
-            </div>
           ) : (
             <>
               {isAdmin && !isSignUp && (
@@ -279,6 +226,15 @@ export function Auth() {
                   <Shield className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                   <p className="text-sm text-emerald-800">
                     Admin accounts are managed by super administrators. If you need access, use the <strong>"Request Access"</strong> option below.
+                  </p>
+                </div>
+              )}
+
+              {!isAdmin && !isSignUp && justRegistered && (
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-5">
+                  <p className="text-sm text-blue-900">
+                    <strong>Account created.</strong> Sign in below. Your vendor profile is <strong>pending admin approval</strong>
+                    — after you log in, you&apos;ll see the approval status until an admin activates your account.
                   </p>
                 </div>
               )}
@@ -357,21 +313,6 @@ export function Auth() {
               </form>
 
               <div className="mt-5 text-center space-y-3">
-                {isDev && !isSignUp && (
-                  <button
-                    type="button"
-                    onClick={handleDevQuickLogin}
-                    disabled={loading}
-                    className={`w-full px-6 py-2.5 rounded-xl border font-medium transition-all disabled:opacity-50 ${
-                      isAdmin
-                        ? 'border-emerald-300 text-emerald-700 hover:bg-emerald-50'
-                        : 'border-blue-300 text-blue-700 hover:bg-blue-50'
-                    }`}
-                  >
-                    {isAdmin ? 'Dev Bypass: Login as Admin' : 'Dev Bypass: Login as Vendor'}
-                  </button>
-                )}
-
                 {!isSignUp && (
                   <button
                     type="button"

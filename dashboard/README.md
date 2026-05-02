@@ -88,23 +88,22 @@ Expected response:
 ## 🏗️ Architecture
 
 ### Frontend
-- **React 18** with TypeScript
-- **Vite** for fast builds
+- **React 19** with TypeScript
+- **Next.js 15** (App Router) for build, SSR, and API routes
 - **TailwindCSS** for styling
-- **React Router** for navigation
+- **React Router** in client bundles where used for in-app navigation
 - **Lucide React** for icons
 
 ### Backend
-- **Supabase** for database and auth
-- **Edge Functions** for serverless API
-- **Express** for API proxy layer
-- **PostgreSQL** with RLS policies
+- **PostgreSQL** (local or hosted) via `DATABASE_URL`
+- **Next.js Route Handlers** for `/api/*` (DB, auth, storage, named functions)
+- **NextAuth** (cookie sessions) for dashboard sign-in
+- **Row-level security** where defined in migrations under `postgres/migrations/`
 
 ### API Layer
-- **Express.js** server proxies to Supabase Edge Functions
-- Public endpoints at `/api/catalog/*`
-- Full CORS support
-- JSON-only responses
+- Next.js app routes under `app/api/`
+- Public catalog endpoints at `/api/catalog/*`
+- JSON-oriented handlers for integrations
 
 ---
 
@@ -121,12 +120,12 @@ Expected response:
 │   ├── lib/              # Utility libraries
 │   ├── types/            # TypeScript types
 │   └── constants/        # App constants
-├── supabase/
-│   ├── functions/        # Edge Functions
-│   └── migrations/       # Database migrations
-├── dist/                 # Built application
-├── server.cjs           # Express API server
-└── Dockerfile           # Container configuration
+├── postgres/
+│   └── migrations/       # SQL migrations (apply with npm run db:apply-migrations)
+├── app/                  # Next.js App Router (API routes + pages)
+├── docs/                 # Operational notes (see docs/OPERATIONS.md)
+├── Dockerfile            # Next.js standalone production image
+└── docker-compose.yml    # Example compose (env from .env)
 ```
 
 ---
@@ -159,27 +158,25 @@ Expected response:
 
 ## 🔧 Environment Variables
 
-Create a `.env` file:
+Create a `.env` file (see `.env.example`):
 
 ```bash
-# Supabase Configuration
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key-here
-
-# Server Configuration (optional)
-PORT=3000
-NODE_ENV=production
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/dashboard
+AUTH_SECRET=generate-with-openssl-rand-base64-32
+NEXTAUTH_URL=http://localhost:3000
 ```
+
+Apply schema: `npm run db:apply-migrations` (reads `postgres/migrations/*.sql`).
 
 ---
 
 ## 🚢 Deployment
 
-### Quick Deploy
+### Quick deploy
 
 ```bash
-# Build and start
-npm run server
+npm run build
+npm run start
 ```
 
 ### Docker Deploy
@@ -190,8 +187,9 @@ docker build -t vendor-dashboard .
 
 # Run container
 docker run -d -p 3000:3000 \
-  -e VITE_SUPABASE_URL="https://your-project.supabase.co" \
-  -e VITE_SUPABASE_ANON_KEY="your-key" \
+  -e DATABASE_URL="postgresql://..." \
+  -e AUTH_SECRET="your-secret" \
+  -e NEXTAUTH_URL="https://your-host" \
   vendor-dashboard
 ```
 
@@ -231,6 +229,10 @@ curl -i https://vendor.sufisciencecenter.info/api/catalog/navigation
 
 ## 📚 Documentation
 
+### Operations (start here)
+
+- [docs/OPERATIONS.md](./docs/OPERATIONS.md) — env vars, migrations, Docker, public API base URLs
+
 ### API Documentation
 - [PUBLIC_API_ENDPOINTS.md](./PUBLIC_API_ENDPOINTS.md) - Complete API guide
 - [DEPLOYMENT_API_ENDPOINTS.md](./DEPLOYMENT_API_ENDPOINTS.md) - Deployment instructions
@@ -253,7 +255,7 @@ curl -i https://vendor.sufisciencecenter.info/api/catalog/navigation
 ## 🔐 Security
 
 - **RLS Policies** - Row-level security on all tables
-- **JWT Authentication** - Supabase Auth integration
+- **Session authentication** - NextAuth (cookie-based)
 - **CORS Protection** - Configured for API endpoints
 - **Environment Variables** - Secrets never in code
 - **Input Validation** - All user input validated
@@ -266,12 +268,12 @@ curl -i https://vendor.sufisciencecenter.info/api/catalog/navigation
 | Category | Technology |
 |----------|-----------|
 | Frontend | React, TypeScript, TailwindCSS |
-| Build Tool | Vite |
-| Backend | Supabase (PostgreSQL, Auth, Storage) |
-| API | Express.js, Edge Functions |
+| Build / runtime | Next.js 15 |
+| Backend | PostgreSQL (`DATABASE_URL`, `pg`) |
+| API | Next.js Route Handlers under `app/api/` |
 | Deployment | Docker, Node.js, Vercel, Render |
 | Icons | Lucide React |
-| Routing | React Router v7 |
+| Routing | Next.js App Router + client areas using React Router where present |
 
 ---
 
@@ -293,11 +295,10 @@ npm run dev          # Start dev server
 
 # Build
 npm run build        # Build for production
-npm run preview      # Preview production build
+npm run smoke:api    # Optional: curl public /api/* smoke checks
 
-# Server
-npm start            # Start Express server
-npm run server       # Build + Start
+# Production server (after build)
+npm run start        # next start
 
 # Quality
 npm run lint         # Run ESLint
@@ -310,21 +311,21 @@ npm run typecheck    # Check TypeScript
 
 ### API Returns HTML Instead of JSON
 
-**Solution:** Ensure API routes in `server.cjs` are defined BEFORE static file serving.
+**Solution:** Confirm you are hitting Next.js (`npm run start`), not a static file host only. API routes live under `app/api/`.
 
 ### CORS Errors
 
-**Solution:** Verify `cors` middleware is configured with `origin: '*'`.
+**Solution:** Adjust CORS in the relevant `app/api/**/route.ts` handlers or your reverse proxy.
 
 ### 404 on API Endpoints
 
-**Solution:** Check that `server.cjs` is running and handling `/api/catalog/*` routes.
+**Solution:** Check that `next start` is running and that `/api/catalog/*` routes exist under `app/api/catalog/`.
 
 ### Build Errors
 
 **Solution:**
 ```bash
-rm -rf node_modules dist
+rm -rf node_modules .next
 npm install
 npm run build
 ```

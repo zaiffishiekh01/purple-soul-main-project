@@ -23,3 +23,6 @@ out
 *.sln
 *.sw?
 .env
+
+# Local file storage (see src/lib/server/storage.ts)
+storage/

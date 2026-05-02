@@ -138,7 +138,7 @@ This document provides a complete overview of the catalog governance system impl
 **Endpoints**:
 
 #### GET /get-catalog-navigation
-**URL**: `https://[project].supabase.co/functions/v1/get-catalog-navigation`
+**URL**: `https://<your-dashboard-host>/api/catalog/navigation`
 
 **Returns**:
 - Hierarchical navigation menu structure
@@ -153,7 +153,7 @@ This document provides a complete overview of the catalog governance system impl
 - Mobile app menus
 
 #### GET /get-catalog-taxonomy
-**URL**: `https://[project].supabase.co/functions/v1/get-catalog-taxonomy`
+**URL**: `https://<your-dashboard-host>/api/catalog/taxonomy`
 
 **Query Parameters**:
 - `?flat=true` - Flat list instead of tree
@@ -174,7 +174,7 @@ This document provides a complete overview of the catalog governance system impl
 - Category landing pages
 
 #### GET /get-catalog-facets
-**URL**: `https://[project].supabase.co/functions/v1/get-catalog-facets`
+**URL**: `https://<your-dashboard-host>/api/catalog/facets`
 
 **Query Parameters**:
 - `?category_id=uuid` - Facets for category
@@ -680,7 +680,7 @@ async function getCachedOrFetch(url, key) {
 - API Documentation: `CATALOG_API_DOCUMENTATION.md`
 - Quick Start: `CATALOG_API_QUICK_START.md`
 - Examples in documentation
-- Base URL: `https://[project].supabase.co/functions/v1/`
+- Base URL: `https://<your-dashboard-host>/api/`
 
 ---
 

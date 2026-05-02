@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { supabase } from '../lib/supabase';
+import { dashboardClient } from '../lib/data-client';
 
 export interface RecentActivity {
   id: string;
@@ -29,28 +29,28 @@ export function useRecentActivity(vendorId: string | undefined) {
         const allActivities: RecentActivity[] = [];
 
         const [ordersResult, returnsResult, inventoryResult, transactionsResult] = await Promise.all([
-          supabase
+          dashboardClient
             .from('orders')
             .select('id, order_number, customer_name, total_amount, status, created_at, updated_at')
             .eq('vendor_id', vendorId)
             .order('updated_at', { ascending: false })
             .limit(5),
 
-          supabase
+          dashboardClient
             .from('returns')
             .select('id, return_number, reason, status, created_at')
             .eq('vendor_id', vendorId)
             .order('created_at', { ascending: false })
             .limit(5),
 
-          supabase
+          dashboardClient
             .from('inventory')
-            .select('id, product:products(name), quantity, low_stock_threshold, updated_at')
+            .select('id, product_name, quantity, low_stock_threshold, updated_at')
             .eq('vendor_id', vendorId)
             .order('updated_at', { ascending: false })
             .limit(20),
 
-          supabase
+          dashboardClient
             .from('transactions')
             .select('id, type, amount, status, created_at')
             .eq('vendor_id', vendorId)
@@ -99,20 +99,24 @@ export function useRecentActivity(vendorId: string | undefined) {
         }
 
         if (inventoryResult.data) {
+          const qty = (v: unknown) => (typeof v === 'number' ? v : parseInt(String(v), 10) || 0);
+          const thr = (v: unknown) => (typeof v === 'number' ? v : parseInt(String(v), 10) || 0);
           inventoryResult.data
-            .filter(item => item.quantity <= item.low_stock_threshold)
+            .filter((item) => qty(item.quantity) <= thr(item.low_stock_threshold))
             .slice(0, 3)
             .forEach((item) => {
-              if (item.product && typeof item.product === 'object' && 'name' in item.product) {
-                allActivities.push({
-                  id: `inventory-${item.id}`,
-                  title: 'Low stock alert',
-                  description: `Product "${item.product.name}" has only ${item.quantity} items left`,
-                  time: formatTime(item.updated_at),
-                  type: 'alert',
-                  created_at: item.updated_at
-                });
-              }
+              const name =
+                typeof item.product_name === 'string' && item.product_name.trim()
+                  ? item.product_name.trim()
+                  : 'Product';
+              allActivities.push({
+                id: `inventory-${item.id}`,
+                title: 'Low stock alert',
+                description: `Product "${name}" has only ${qty(item.quantity)} items left`,
+                time: formatTime(String(item.updated_at)),
+                type: 'alert',
+                created_at: String(item.updated_at),
+              });
             });
         }
 
@@ -135,126 +139,10 @@ export function useRecentActivity(vendorId: string | undefined) {
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
 
-        const displayActivities = allActivities.slice(0, 6);
-
-        if (displayActivities.length < 6) {
-          const placeholders: RecentActivity[] = [];
-          const now = new Date();
-
-          const neededCount = 6 - displayActivities.length;
-          const placeholderData = [
-            {
-              title: 'New order received',
-              description: 'Order #ORD-2024-001 from customer',
-              type: 'order' as const,
-              minutesAgo: 30
-            },
-            {
-              title: 'Order delivered',
-              description: 'Order #ORD-2024-000 successfully delivered',
-              type: 'delivery' as const,
-              minutesAgo: 120
-            },
-            {
-              title: 'Product returned',
-              description: 'Return #RET-2024-001 - Customer changed mind',
-              type: 'return' as const,
-              minutesAgo: 180
-            },
-            {
-              title: 'Low stock alert',
-              description: 'Some products are running low on stock',
-              type: 'alert' as const,
-              minutesAgo: 240
-            },
-            {
-              title: 'Payment received',
-              description: '$150.00 payment completed',
-              type: 'payment' as const,
-              minutesAgo: 300
-            },
-            {
-              title: 'Order delivered',
-              description: 'Another order successfully delivered',
-              type: 'delivery' as const,
-              minutesAgo: 360
-            }
-          ];
-
-          for (let i = 0; i < neededCount && i < placeholderData.length; i++) {
-            const placeholder = placeholderData[i];
-            const created = new Date(now.getTime() - placeholder.minutesAgo * 60000);
-            placeholders.push({
-              id: `placeholder-${i}`,
-              title: placeholder.title,
-              description: placeholder.description,
-              time: formatTime(created.toISOString()),
-              type: placeholder.type,
-              created_at: created.toISOString()
-            });
-          }
-
-          setActivities([...displayActivities, ...placeholders]);
-        } else {
-          setActivities(displayActivities);
-        }
+        setActivities(allActivities.slice(0, 6));
       } catch (error) {
         console.error('Error fetching recent activities:', error);
-        const placeholders: RecentActivity[] = [];
-        const now = new Date();
-
-        const placeholderData = [
-          {
-            title: 'New order received',
-            description: 'Order #ORD-2024-001 from customer',
-            type: 'order' as const,
-            minutesAgo: 30
-          },
-          {
-            title: 'Order delivered',
-            description: 'Order #ORD-2024-000 successfully delivered',
-            type: 'delivery' as const,
-            minutesAgo: 120
-          },
-          {
-            title: 'Product returned',
-            description: 'Return #RET-2024-001 - Customer changed mind',
-            type: 'return' as const,
-            minutesAgo: 180
-          },
-          {
-            title: 'Low stock alert',
-            description: 'Some products are running low on stock',
-            type: 'alert' as const,
-            minutesAgo: 240
-          },
-          {
-            title: 'Payment received',
-            description: '$150.00 payment completed',
-            type: 'payment' as const,
-            minutesAgo: 300
-          },
-          {
-            title: 'Order delivered',
-            description: 'Another order successfully delivered',
-            type: 'delivery' as const,
-            minutesAgo: 360
-          }
-        ];
-
-        placeholderData.forEach((placeholder, i) => {
-          const created = new Date(now.getTime() - placeholder.minutesAgo * 60000);
-          placeholders.push({
-            id: `placeholder-${i}`,
-            title: placeholder.title,
-            description: placeholder.description,
-            time: formatTime(created.toISOString()),
-            type: placeholder.type,
-            created_at: created.toISOString()
-          });
-        });
-
-        setActivities(placeholders);
+        setActivities([]);
       } finally {
         setLoading(false);
         isFetchingRef.current = false;

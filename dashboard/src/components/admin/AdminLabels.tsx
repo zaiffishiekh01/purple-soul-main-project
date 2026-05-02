@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Tag, Search, Download, Eye, XCircle, Printer, Package } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { dashboardClient } from '../../lib/data-client';
+import { loadShippingLabelsWithOrdersAndVendors } from '../../lib/dashboard-relational-loaders';
 
 interface ShippingLabel {
   id: string;
@@ -36,22 +37,10 @@ export default function AdminLabels() {
   const fetchLabels = async () => {
     try {
       setLoading(true);
-      let query = supabase
-        .from('shipping_labels')
-        .select(`
-          *,
-          orders (order_number, customer_name),
-          vendors (business_name)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (carrierFilter !== 'all') {
-        query = query.eq('carrier', carrierFilter);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      setLabels(data || []);
+      const data = await loadShippingLabelsWithOrdersAndVendors({
+        carrierEq: carrierFilter,
+      });
+      setLabels((data || []) as ShippingLabel[]);
     } catch (error) {
       console.error('Error fetching labels:', error);
     } finally {

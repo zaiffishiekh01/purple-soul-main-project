@@ -1,30 +1,28 @@
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+import { query } from '@/src/lib/server/db';
 
 export async function fetchSupabaseFunction(functionName: string) {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    return {
-      status: 500,
-      data: {
-        success: false,
-        error: 'Server is missing required Supabase configuration',
-      },
-    };
-  }
-
   try {
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/${functionName}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-      cache: 'no-store',
-    });
-
+    if (functionName === 'get-catalog-navigation') {
+      const result = await query(
+        `SELECT * FROM navigation_links WHERE is_active = true ORDER BY display_order ASC, created_at ASC`,
+      );
+      return { status: 200, data: { success: true, data: result.rows } };
+    }
+    if (functionName === 'get-catalog-taxonomy') {
+      const result = await query(
+        `SELECT * FROM categories WHERE is_active = true ORDER BY display_order ASC, name ASC`,
+      );
+      return { status: 200, data: { success: true, data: result.rows } };
+    }
+    if (functionName === 'get-catalog-facets') {
+      const result = await query(
+        `SELECT * FROM facets WHERE is_active = true ORDER BY display_order ASC, name ASC`,
+      );
+      return { status: 200, data: { success: true, data: result.rows } };
+    }
     return {
-      status: response.status,
-      data: await response.json(),
+      status: 404,
+      data: { success: false, error: `Unknown catalog function: ${functionName}` },
     };
   } catch (error) {
     return {

@@ -228,7 +228,7 @@ All taxonomy categories are mapped to appropriate category groups.
 
 ### Get All Taxonomy Categories (Flat)
 ```typescript
-const { data } = await supabase
+const { data } = await dashboardClient
   .from('categories')
   .select('*')
   .eq('is_active', true)
@@ -316,7 +316,7 @@ To test the hybrid system:
 - `/src/components/admin/AdminCategoryMappings.tsx`
 - `/src/components/admin/AdminCategoryGroups.tsx`
 - `/src/hooks/useCatalogTaxonomy.ts`
-- `/supabase/migrations/create_hybrid_category_system.sql`
+- `/postgres/migrations/create_hybrid_category_system.sql`
 
 ### Modified Files:
 - `/src/components/admin/AdminCategories.tsx` (now has tabs)

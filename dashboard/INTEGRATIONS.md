@@ -32,7 +32,7 @@ RESEND_API_KEY=re_...
 
 1. Create a Stripe account at https://stripe.com
 2. Get your API keys from the Stripe Dashboard
-3. Configure webhook endpoint: `https://YOUR_PROJECT.supabase.co/functions/v1/stripe-webhook`
+3. Configure webhook endpoint: `https://your-dashboard.example.com/api/functions/stripe-webhook`
 
 ### Features
 
@@ -218,7 +218,7 @@ This Edge Function can be triggered:
 2. Add new job:
    ```sql
    SELECT net.http_post(
-     url := 'https://YOUR_PROJECT.supabase.co/functions/v1/inventory-alert-checker',
+     url := 'https://your-dashboard.example.com/api/functions/inventory-alert-checker',
      headers := '{"Content-Type": "application/json"}'::jsonb
    );
    ```
@@ -227,7 +227,7 @@ This Edge Function can be triggered:
 ### Manual Trigger
 
 ```bash
-curl -X POST https://YOUR_PROJECT.supabase.co/functions/v1/inventory-alert-checker
+curl -X POST https://your-dashboard.example.com/api/functions/inventory-alert-checker
 ```
 
 ## Bulk Operations
@@ -341,7 +341,7 @@ For issues with specific integrations:
 
 - **Stripe**: https://stripe.com/support
 - **Resend**: https://resend.com/support
-- **Supabase**: https://supabase.com/docs
+- **PostgreSQL**: https://www.postgresql.org/docs/
 
 ## Future Enhancements
 

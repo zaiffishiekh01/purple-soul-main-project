@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useEffect, useRef } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -12,10 +12,6 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, requireAdmin, requireVendor }: ProtectedRouteProps) {
   const router = useRouter();
-  const renderCountRef = useRef(0);
-  renderCountRef.current += 1;
-  console.log('🟣 ProtectedRoute render:', renderCountRef.current, { requireAdmin, requireVendor });
-
   const { user, loading, isAdmin } = useAuth();
   const shouldRedirectToRoot = !loading && !user;
 
@@ -37,12 +33,10 @@ export function ProtectedRoute({ children, requireAdmin, requireVendor }: Protec
   }
 
   if (shouldRedirectToRoot) {
-    console.log('🟣 ProtectedRoute: No user, redirecting to /');
     return null;
   }
 
   if (requireAdmin && !isAdmin) {
-    console.log('🟣 ProtectedRoute: Admin required but user is not admin, BLOCKING');
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-red-50/30 to-slate-50 flex items-center justify-center">
         <div className="text-center max-w-md p-8">
@@ -55,7 +49,6 @@ export function ProtectedRoute({ children, requireAdmin, requireVendor }: Protec
   }
 
   if (requireVendor && isAdmin) {
-    console.log('🟣 ProtectedRoute: Vendor required but user is admin, BLOCKING');
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 flex items-center justify-center">
         <div className="text-center max-w-md p-8">
@@ -72,6 +65,5 @@ export function ProtectedRoute({ children, requireAdmin, requireVendor }: Protec
     );
   }
 
-  console.log('🟣 ProtectedRoute: Rendering children');
   return <>{children}</>;
 }

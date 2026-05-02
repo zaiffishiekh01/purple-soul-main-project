@@ -1,34 +1,15 @@
 @echo off
 echo ============================================
-echo DEPLOYING create-admin EDGE FUNCTION
+echo create-admin is a Next.js Route Handler
 echo ============================================
 echo.
-echo This will deploy the create-admin edge function to:
-echo Project: naesxujdffcmatntrlfr
+echo There is no separate Supabase Edge deploy step.
+echo Handler: app\api\functions\[name]\route.ts  (branch: create-admin)
 echo.
-echo Make sure you have:
-echo 1. Supabase CLI installed
-echo 2. Logged in (supabase login)
+echo Deploy by shipping this dashboard app (e.g. npm run build, then npm run start,
+echo or your Docker / hosting pipeline). Ensure DATABASE_URL, AUTH_SECRET, NEXTAUTH_URL are set.
 echo.
-pause
-
-cd /d "%~dp0"
-
-echo.
-echo Deploying create-admin function...
-echo.
-
-supabase functions deploy create-admin --project-ref naesxujdffcmatntrlfr
-
-echo.
-echo ============================================
-echo DEPLOYMENT COMPLETE
-echo ============================================
-echo.
-echo Next steps:
-echo 1. Set required secrets (if not already set):
-echo    supabase secrets set SUPABASE_URL=https://naesxujdffcmatntrlfr.supabase.co SUPABASE_SERVICE_ROLE_KEY=YOUR_KEY --project-ref naesxujdffcmatntrlfr
-echo.
-echo 2. Test creating an admin in the dashboard
+echo Smoke public APIs (optional):
+echo   npm run smoke:api
 echo.
 pause
